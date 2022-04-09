@@ -350,6 +350,8 @@ class BoardVis(QMainWindow):
             for x, y in self.controller.get_move_path():
                 new_spot = board_to_screen(x, y, self.tileSize)  # create pixel position of new piece
                 new_spots.append(new_spot)
+            if len(new_spots) == 0:
+                new_spot = board_to_screen(self.move_start[0], self.move_start[1], self.tileSize)
             piece.start[0] = self.move_end[0]
             piece.start[1] = self.move_end[1]
         else:
