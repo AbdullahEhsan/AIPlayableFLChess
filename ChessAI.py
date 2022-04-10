@@ -3,7 +3,7 @@ import random
 from ChessGame import Game
 
 
-# game = Game()
+#game = Game()
 
 class AIFunctions:
     def __init__(self, game: Game, color):
@@ -13,18 +13,7 @@ class AIFunctions:
         self.total_success_moves = 0
         self.total_moves_attempted = 0
         self.last_turn = 0
-        self.kingmod = 1
         self.hostilemap = \
-            [[0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0]]
-
-        self.kingOrderGrid = \
             [[0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -64,54 +53,6 @@ class AIFunctions:
                     return (x, y)
         print('piece not on board')
         return (-1, -1)
-
-    #feed x,y of moved king corp piece for orders
-    def kingOrders(self, x, y):
-        self.resetKingOrders()
-
-        #determine piece advantage
-        white = 0
-        black = 0
-
-        for item in self.board:
-            for item2 in item:
-                if item2.piece:
-                    if item2.piece.is_white():
-                        white = white+1
-                    else:
-                        black = black+1
-
-        korder = True
-        if(white > black and self.color == True or black > white and self.color == False):
-            korder = False
-
-        #if the AI does not have piece advantage, make more defensive moves
-        if(korder):
-            list = self.game.get_possible_moves_for_piece_at(x = y, y = x, ai_backdoor=True)
-            for l,m,p in list:
-                #sets spot values near the moved king piece to be higher
-                #also increases the danger of hostile pieces to encourage shorter moves.
-                if(l - x == 1 or x - l == 1 and m - y == 1 or y - m == 1):
-                    self.kingOrderGrid[m][l] = 2
-                    self.kingmod = 3
-        #else the AI has piece advantage, make more aggressive moves
-        else:
-            #applies to the hostilemap, reducing the impact of dangerous spots,
-            #therefore permitting more aggressive movement
-            self.kingmod = .2
-            self.genHostileMap()
-
-    def resetKingOrders(self):
-        self.kingmod = 1
-        self.kingOrderGrid = \
-            [[0, 0, 0, 0, 0, 0, 0, 0],
-             [0, 0, 0, 0, 0, 0, 0, 0],
-             [0, 0, 0, 0, 0, 0, 0, 0],
-             [0, 0, 0, 0, 0, 0, 0, 0],
-             [0, 0, 0, 0, 0, 0, 0, 0],
-             [0, 0, 0, 0, 0, 0, 0, 0],
-             [0, 0, 0, 0, 0, 0, 0, 0],
-             [0, 0, 0, 0, 0, 0, 0, 0]]
 
     # weights attack areas based on friendly piece power
     def attackRef(self, x, y, piece):
@@ -175,6 +116,9 @@ class AIFunctions:
     def genHostileMap(self):
         x = 0
         y = 0
+
+        KingLocation = (0, 5)
+
         self.hostilemap = [[0, 0, 0, 0, 0, 0, 0, 0],
                    [0, 0, 0, 0, 0, 0, 0, 0],
                    [0, 0, 0, 0, 0, 0, 0, 0],
@@ -197,10 +141,26 @@ class AIFunctions:
                         else:
                             spotVal = .4
                         for a, b, c in moveList:
-                            if (a - x == 1 or x - a == 1 and b - y == 1 or b - a == 1):
-                                self.hostilemap[b][a] += spotVal * self.kingmod
-                            elif(item2.piece.get_type() == 'Rook' or item2.piece.get_type() == 'Knight'):
-                                self.hostilemap[b][a] += spotVal * self.kingmod
+                            self.hostilemap[b][a] += spotVal
+
+                            found = False
+                            for y_c in (-1, 0, 1):
+                                for x_c in (-1, 0, 1):
+                                    if (x_c, y_c) == (0, 0):
+                                        continue
+                                    la_x = a + x_c
+                                    la_y = b + y_c
+                                    if la_x > 7 or la_y > 7 or la_x < 0 or la_y < 0:
+                                        continue
+                                    found = (la_x, la_y) == KingLocation
+                                    if found:
+                                        print(self.hostilemap[b][a])
+                                        self.hostilemap[b][a] -= 1000
+                                        print(self.hostilemap[b][a])
+                                        break
+                                if found:
+                                    break
+
                 y = y + 1
             x = x + 1
             y = 0
@@ -277,9 +237,17 @@ class AIFunctions:
                                 if player == "black":
                                     if (m - x == 5 or x - m == 5 or l - y == 5):
                                         heatmap[m][l] += 1
-                            heatmap[m][l] += spotVal - self.hostilemap[m][l] + self.kingOrderGrid[m][l]
+                            if item2.piece.get_type() != 'King':
+                                hosval = self.hostilemap[m][l] % 1000
+                            else:
+                                hosval = self.hostilemap[m][l]
+                                print ('King Testing=======================:', hosval)
+
+                            print ('hosval Testing=======================:', hosval)
+                            heatmap[m][l] += spotVal - self.hostilemap[m][l]
 
                         dataChunk = [item2.piece, heatmap]
+
                         if (item2.piece.get_corp() == 'corpW1' or item2.piece.get_corp() == 'corpB1'):
                             kCore.append(dataChunk)
                         elif (item2.piece.get_corp() == 'corpW2' or item2.piece.get_corp() == 'corpB2'):
@@ -305,20 +273,30 @@ class AIFunctions:
         #self.corpSplitData(moveData)
         return kCore, xCore, yCore
 
-    def displayMoveData(self, moveData):
+    def displayMoveData(self, kCore, xCore, yCore):
 
-        for element, array in moveData:
+        for element, array in kCore:
+            print(element.get_name())
+            for row in array:
+                print(row)
+        for element, array in xCore:
+            print(element.get_name())
+            for row in array:
+                print(row)
+        for element, array in yCore:
             print(element.get_name())
             for row in array:
                 print(row)
 
-    def best_move(self, moveData):
+    def best_move(self, kCore, xCore, yCore):
         max_weight = None
         BKingLocation = self.__get_position_of_piece('bKg')
         WKingLocation = self.__get_position_of_piece('wKg')
         BestSameScore = []
+        print(kCore[2])
+
         # print('start check')
-        for element, array in moveData:
+        for element, array in kCore[2]:
             SameScore = []
             max_weight_piece = None
 
@@ -384,6 +362,136 @@ class AIFunctions:
                 if max_weight == max_weight_piece[2]:
                     BestSameScore.append(max_weight_piece)
 
+        for element, array in xCore[0]:
+            SameScore = []
+            max_weight_piece = None
+
+            self.__get_position_of_piece('bKg')
+            self.__get_position_of_piece('wKg')
+
+            for y, row in enumerate(array):
+                if max(row) > 0:
+                    for x, weight in enumerate(row):
+                        if weight != 0:
+                            if ((x == WKingLocation[0] and y == WKingLocation[1])
+                                    or (x == BKingLocation[0] and y == BKingLocation[1])):
+                                print("Testing1========================================")
+                                max_weight_piece = (x, y, weight + 20, element.get_name(), element.x_loc, element.y_loc)
+                                SameScore = [max_weight_piece]
+                            if not max_weight_piece:
+                                if ((x == WKingLocation[0] and y == WKingLocation[1])
+                                        or (x == BKingLocation[0] and y == BKingLocation[1])):
+                                    max_weight_piece = (
+                                    x, y, weight + 20, element.get_name(), element.x_loc, element.y_loc)
+                                    SameScore = [max_weight_piece]
+                                    print("Testing2========================================")
+                                else:
+                                    max_weight_piece = (x, y, weight, element.get_name(), element.x_loc, element.y_loc)
+                                    SameScore = [max_weight_piece]
+                                # sets up a max weight if there is not one already set
+                                # max_weight_piece = (x, y, weight, element.get_name() , element.x_loc, element.y_loc)
+                                # SameScore = [max_weight_piece]
+                            else:
+                                if weight > max_weight_piece[2]:
+                                    if ((x == WKingLocation[0] and y == WKingLocation[1])
+                                            or (x == BKingLocation[0] and y == BKingLocation[1])):
+                                        max_weight_piece = (
+                                        x, y, weight, element.get_name(), element.x_loc, element.y_loc)
+                                        SameScore = [max_weight_piece]
+                                        print("Testing3========================================")
+                                    else:
+                                        max_weight_piece = (
+                                        x, y, weight, element.get_name(), element.x_loc, element.y_loc)
+                                        SameScore = [max_weight_piece]
+
+                                    # max_weight_piece = (x, y, weight, element.get_name() , element.x_loc, element.y_loc)
+                                    # SameScore = [max_weight_piece]
+
+                                elif weight == max_weight_piece[2]:
+                                    SameScore.append((x, y, weight, element.get_name(), element.x_loc, element.y_loc))
+
+            # # to check max weight piece after every from piece is checked
+            # if max_weight_piece:
+            #     print('max pc', max_weight_piece)
+
+            if len(SameScore) > 0:
+                # Shuffles the SameScore Array twice to pull a random move
+                random.shuffle(SameScore)
+                max_weight_piece = SameScore[0]
+
+                if not max_weight:
+                    max_weight = max_weight_piece[2]
+                elif max_weight < max_weight_piece[2]:
+                    BestSameScore = []
+                    max_weight = max_weight_piece[2]
+
+                if max_weight == max_weight_piece[2]:
+                    BestSameScore.append(max_weight_piece)
+
+        for element, array in yCore[1]:
+            SameScore = []
+            max_weight_piece = None
+
+            self.__get_position_of_piece('bKg')
+            self.__get_position_of_piece('wKg')
+
+            for y, row in enumerate(array):
+                if max(row) > 0:
+                    for x, weight in enumerate(row):
+                        if weight != 0:
+                            if ((x == WKingLocation[0] and y == WKingLocation[1])
+                                    or (x == BKingLocation[0] and y == BKingLocation[1])):
+                                print("Testing1========================================")
+                                max_weight_piece = (x, y, weight + 20, element.get_name(), element.x_loc, element.y_loc)
+                                SameScore = [max_weight_piece]
+                            if not max_weight_piece:
+                                if ((x == WKingLocation[0] and y == WKingLocation[1])
+                                        or (x == BKingLocation[0] and y == BKingLocation[1])):
+                                    max_weight_piece = (
+                                    x, y, weight + 20, element.get_name(), element.x_loc, element.y_loc)
+                                    SameScore = [max_weight_piece]
+                                    print("Testing2========================================")
+                                else:
+                                    max_weight_piece = (x, y, weight, element.get_name(), element.x_loc, element.y_loc)
+                                    SameScore = [max_weight_piece]
+                                # sets up a max weight if there is not one already set
+                                # max_weight_piece = (x, y, weight, element.get_name() , element.x_loc, element.y_loc)
+                                # SameScore = [max_weight_piece]
+                            else:
+                                if weight > max_weight_piece[2]:
+                                    if ((x == WKingLocation[0] and y == WKingLocation[1])
+                                            or (x == BKingLocation[0] and y == BKingLocation[1])):
+                                        max_weight_piece = (
+                                        x, y, weight, element.get_name(), element.x_loc, element.y_loc)
+                                        SameScore = [max_weight_piece]
+                                        print("Testing3========================================")
+                                    else:
+                                        max_weight_piece = (
+                                        x, y, weight, element.get_name(), element.x_loc, element.y_loc)
+                                        SameScore = [max_weight_piece]
+
+                                    # max_weight_piece = (x, y, weight, element.get_name() , element.x_loc, element.y_loc)
+                                    # SameScore = [max_weight_piece]
+
+                                elif weight == max_weight_piece[2]:
+                                    SameScore.append((x, y, weight, element.get_name(), element.x_loc, element.y_loc))
+
+
+
+            if len(SameScore) > 0:
+                # Shuffles the SameScore Array twice to pull a random move
+                random.shuffle(SameScore)
+                max_weight_piece = SameScore[0]
+
+                if not max_weight:
+                    max_weight = max_weight_piece[2]
+                elif max_weight < max_weight_piece[2]:
+                    BestSameScore = []
+                    max_weight = max_weight_piece[2]
+
+                if max_weight == max_weight_piece[2]:
+                    BestSameScore.append(max_weight_piece)
+
         if len(BestSameScore) == 0:
             self.game.tracker.end_turn()
             BestMove = (element.x_loc, element.x_loc, 0, element.get_name(), element.x_loc, element.y_loc)
@@ -391,7 +499,6 @@ class AIFunctions:
             random.shuffle(BestSameScore)
             BestMove = BestSameScore[0]
 
-        # print('end check, result', BestMove)
 
         print("Best Move after everything: ", BestMove, "\n\n")
 
@@ -399,8 +506,7 @@ class AIFunctions:
 
     def AI_move(self, BestMove):
 
-        # self.displayMoveData(moveData)
-        # self.best_move(moveData)
+
         print(BestMove)
         print("Moving ", BestMove[3], " from x: ", BestMove[4], " y: ", BestMove[5], "Moving to x: ", BestMove[0],
               " y: ", BestMove[1])
@@ -408,34 +514,34 @@ class AIFunctions:
         if self.game.move_piece(from_x=BestMove[4], from_y=BestMove[5], to_x=BestMove[0], to_y=BestMove[1]):
             self.total_success_moves += 1
         self.total_moves_attempted += 1
-        # self.displayMoveData(moveData)
+
 
     def make_move(self):
-        if not self.game.game_status():
+        if not self.game.is_game_over():
             if self.last_turn != self.game.tracker.get_turn_count():
                 self.total_success_moves = 0
                 self.total_moves_attempted = 0
             print("starting new move:")
             player = "white" if self.game.tracker.get_current_player() else "black"
             print('current player:', player)
-            x = self.moveMap()
-            y = self.best_move(x)
+            K = self.moveMap()
+            X = self.moveMap()
+            T = self.moveMap()
+            y = self.best_move(K,X,T)
             self.AI_move(y)
             self.last_turn = self.game.tracker.get_turn_count()
             colour = "white" if self.color else "black"
             print(colour, "team had", self.total_success_moves, 'successful moves out of', self.total_moves_attempted,
                   'this turn')
 
+
 # aiAssistWhite = AIFunctions(game, True)
 # aiAssistBlack = AIFunctions(game, False)
-
-
-# for num in range (100):
-#    if not game.game_status():
-#        if game.tracker.get_current_player():
-#            aiAssistWhite.make_move()
-#        else:
-#            aiAssistBlack.make_move()
-#    else:
-#        print("Game Over!")
-#        break
+#
+#
+# for num in range (44):
+#     if game.tracker.get_current_player():
+#         aiAssistWhite.make_move()
+#     else:
+#         aiAssistBlack.make_move()
+#
