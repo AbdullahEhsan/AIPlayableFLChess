@@ -265,8 +265,8 @@ class BoardVis(QMainWindow):
         self.setWindowTitle("Chess Board")
         self.highlighted = []
         self.corp_menu = CorpMenu(self)
-        self.ai_delay = QTimer(self)
-        self.ai_delay.timeout.connect(self.ai_single_move)
+        self.ai_move_delay = QTimer(self)
+        self.ai_move_delay.timeout.connect(self.ai_single_move)
         # buttons:
         # This button allow you can stop your turn
         self.stopButton = QPushButton("End Turn", self)
@@ -331,6 +331,8 @@ class BoardVis(QMainWindow):
         self.diceRollResult = -1
 
         self.ai_player = None
+        self.sbs_delay_ms = 500
+        self.ai_move_delay_ms = 1500
 
         self.showBoard()
 
@@ -359,18 +361,18 @@ class BoardVis(QMainWindow):
         if len(new_spots)>1:
             new_spots.reverse()
 
-            mv_delay = QTimer(self)
+            sbs_delay = QTimer(self)
 
             def spot_by_spot():
                 if len(new_spots)==0:
-                    mv_delay.stop()
+                    sbs_delay.stop()
                     return
                 x, y = new_spots.pop()
                 print(x,y)
                 piece.move(x, y)
 
-            mv_delay.timeout.connect(spot_by_spot)
-            mv_delay.start(500)
+            sbs_delay.timeout.connect(spot_by_spot)
+            sbs_delay.start(self.sbs_delay_ms)
         else:
             piece.move(new_spot[0], new_spot[1])
 
@@ -806,15 +808,57 @@ class BoardVis(QMainWindow):
     def make_AI_move(self):
         if not self.computerButton.isChecked() or self.ai_turn_over():
             return      # ai not selected, bail out of function
-        self.ai_delay.start(1500)
+        self.ai_move_delay.start(self.ai_move_delay_ms)
 
     def ai_single_move(self):
-        self.ai_player.make_move()
+        self.ai_move_delay.stop()
+
+        ai_mv_map = self.ai_player.moveMap()
+        ai_mv = self.ai_player.best_move(ai_mv_map)
+        to_x, to_y = ai_mv[0], ai_mv[1]
+        from_x, from_y = ai_mv[4], ai_mv[5]
+        ai_mv_piece = self.piecePos[from_y][from_x]
+        if type(ai_mv_piece).__name__ != 'PieceVis':
+            return
+
+        moveSuccessful = self.controller.move_piece(from_x=from_x, from_y=from_y,
+                                                    to_x=to_x, to_y=to_y)
+        if moveSuccessful:
+            new_spots = []
+            for x, y in self.controller.get_move_path():
+                new_spot = board_to_screen(x, y, self.tileSize)  # create pixel position of new piece
+                new_spots.append(new_spot)
+            ai_mv_piece.start[0] = to_x
+            ai_mv_piece.start[1] = to_y
+        else:
+            new_spots = []
+            new_spot = board_to_screen(from_x, from_y, self.tileSize)
+
+        def updates():
         self._update_pieces()
         self.update_labels()
         self.update_captured_pieces()
-        if self.ai_turn_over():
-            self.ai_delay.stop()
+            self.make_AI_move()
+
+        if len(new_spots)>1:
+            new_spots.reverse()
+
+            ai_sbs_delay = QTimer(self)
+
+            def ai_spot_by_spot():
+                if len(new_spots)==0:
+                    ai_sbs_delay.stop()
+                    updates()
+                    return
+                x, y = new_spots.pop()
+                print(x,y)
+                ai_mv
+                ai_mv_piece.move(x, y)
+
+            ai_sbs_delay.timeout.connect(ai_spot_by_spot)
+            ai_sbs_delay.start(self.sbs_delay_ms)
+        else:
+            updates()
 
     def ai_turn_over(self):
         whites_turn = (self.controller.tracker.get_current_player()==1)
