@@ -336,14 +336,17 @@ class BoardVis(QMainWindow):
             'default': {
                 'splash': './picture/defaultChessSplash.png',
                 'color': 'rgb(0, 204, 204)',
+                'board': ('wt', 'bt', 'bt') #light_tile, dark_tile, border_tile
                 },
             'wood': {
                 'splash': './picture/woodChessSplash.png',
                 'color': 'rgb(227, 217, 197)',
+                'board': ('lwt', 'dwt', 'lwt')
                 },
             'marble': {
                 'splash': './picture/marbleChessSplash.png',
                 'color': 'white',
+                'board': ('wmt', 'gmt', 'wmt')
                 },
         }
 
@@ -387,6 +390,10 @@ class BoardVis(QMainWindow):
         self.resultCaptureText.setStyleSheet(alt_text_css if theme=='marble' else text_css)
 
         self.okayButton.setStyleSheet(button_css)
+
+        # board
+        self.set_non_playables()
+
     def do_piece_move(self, mvd_piece: PieceVis):
         print("was called")
         piece = mvd_piece
@@ -492,8 +499,6 @@ class BoardVis(QMainWindow):
     def setBoard(self):
         self.tileSize = 75
         self.boardSize = self.tileSize * 9.5
-        #add the tile images
-        self.set_non_playables()
 
         #get data from controller and display it
 
@@ -1109,23 +1114,22 @@ class BoardVis(QMainWindow):
         self.okayButton.hide()
 
     def set_non_playables(self):
-        label = self.mk_basic_label("yt")
+        light, dark, border = self.theme['board']
+        label = self.mk_basic_label(border)
         label.move(0, 0)
-        self.set_emptys("wt", "bt", "gt", "ot")
-        self.set_lets_and_nums()
+        self.set_emptys(light, dark, "gt", "ot")
+        self.set_lets_and_nums(border)
 
-    def set_lets_and_nums(self):
+    def set_lets_and_nums(self, border_bg:str=""):
         letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
         nums = ["8", "7", "6", "5", "4", "3", "2", "1"]
 
         if not self.white_pov:
             letters.reverse()
             nums.reverse()
-        combo = [(letters[i], nums[i]) for i in range(8)]
-        for i in range(8):
-            name1, name2 = combo[i]
-            l1 = self.mk_basic_label(name1)
-            l2 = self.mk_basic_label(name2)
+        for i, (ltr, num) in enumerate(zip(letters, nums)):
+            l1 = self.mk_basic_label(border_bg+ltr)
+            l2 = self.mk_basic_label(border_bg+num)
             l1.move(int( (i + 1) * self.tileSize), 0)
             l2.move(0, int( (i + 1) * self.tileSize))
             l1.show()
