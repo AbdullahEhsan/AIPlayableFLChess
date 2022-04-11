@@ -231,6 +231,10 @@ class TileVis(QLabel):
         self.default_vis = QPixmap('./picture/' + visual)
         self.set_img(False)
 
+    def set_default_vis(self, new_pixmap:QPixmap):
+        self.default_vis = new_pixmap
+        self.set_img(False)
+
     def set_active(self, val, atk=False):
         self.is_active = val
         self.set_img(atk)
@@ -1249,7 +1253,7 @@ class BoardVis(QMainWindow):
                     label.move(int((i+1) * self.tileSize), int((j+1) * self.tileSize))
                     self.tilePos[j][i] = label
                 else:
-                    self.tilePos[j][i].setPixmap(QPixmap('./picture/' + name))
+                    self.tilePos[j][i].set_default_vis(QPixmap('./picture/' + name))
                 is_white = not is_white
             is_white = not is_white
 
