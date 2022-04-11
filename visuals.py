@@ -278,7 +278,7 @@ class BoardVis(QMainWindow):
         self.corp_menu = CorpMenu(self)
         self.ai_move_delay = QTimer(self)
         self.ai_move_delay.timeout.connect(self.ai_single_move)
-        
+
         self.theme_menu = ThemeMenu(400,400, self)
         self.corner_tile = None
 
@@ -828,7 +828,7 @@ class BoardVis(QMainWindow):
         self.medievalButton.adjustSize()
         self.corpCommanderButton.adjustSize()
 
-        self.set_theme('wood')
+        self.set_theme()
 
         self.captured_by = {
             "white": [],
