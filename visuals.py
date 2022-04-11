@@ -11,7 +11,7 @@ from ChessAI import AIFunctions
 from ChessGame import Game as chess_game
 
 game_over = False
-
+ai_turn = False
 def corp_to_color(corp_num):
     colors = ['', 'rd', 'bl', 'gr']
     return colors[corp_num]
@@ -55,9 +55,12 @@ class corpVis(QLabel):
     #obsoleted
 
 class PieceVis(QLabel):
-    def __init__(self, visual, x_pos, y_pos, parent=None):
+    def __init__(self, visual, x_pos, y_pos, color:str='', parent=None):
         super(PieceVis, self).__init__(parent)
 
+        if color not in ('white', 'black'):
+            color = ''
+        self.color = color
         # Set up some properties
         self.labelPos = QPoint()
         self.vis = visual
@@ -78,8 +81,18 @@ class PieceVis(QLabel):
     def set_img(self):
         self.setPixmap(self.default_vis)
 
+    def not_same_team(self):
+        is_white = self.color == 'white'
+        whites_turn = (self.parent().controller.tracker.get_current_player()==1)
+        return whites_turn != is_white
+
+    def should_freeze(self):
+        tile_not_active = not self.parent().tilePos[self.start[1]][self.start[0]].get_active()
+
+        return game_over or ai_turn or (tile_not_active and self.not_same_team())
+
     def mousePressEvent(self, ev: QMouseEvent) -> None:
-        if game_over == True:
+        if self.should_freeze():
             return
         #If user clicks on a piece, it will be moved to the starting position
         #self.start =  screen_to_board(ev.windowPos().x(), ev.windowPos().y(), self.parent().tileSize)
@@ -89,7 +102,8 @@ class PieceVis(QLabel):
 
     # Set the region limits of the board that the piece can move to
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:
-        if game_over == True:
+        # doesn't use should_freeze to allow for attacks
+        if game_over or ai_turn or self.not_same_team():
             return
         if ((ev.globalPos() - self.parent().pos()) - QPoint(0, 30)).x() < (0 + (self.parent().tileSize / 2)) \
                 and ((ev.globalPos() - self.parent().pos()) - QPoint(0, 30)).y() < \
@@ -144,7 +158,7 @@ class PieceVis(QLabel):
     def mouseReleaseEvent(self, ev: QMouseEvent) -> None:
         drag_move = False
         click_end = False
-        if game_over == True:
+        if self.should_freeze():
             return
         self.onBoarder = False
         print(self)
@@ -262,10 +276,12 @@ class BoardVis(QMainWindow):
         self.setWindowTitle("Chess Board")
         self.highlighted = []
         self.corp_menu = CorpMenu(self)
+        self.ai_move_delay = QTimer(self)
+        self.ai_move_delay.timeout.connect(self.ai_single_move)
+        
         self.theme_menu = ThemeMenu(400,400, self)
         self.corner_tile = None
-        self.ai_delay = QTimer(self)
-        self.ai_delay.timeout.connect(self.ai_single_move)
+
         # buttons:
         #displays theme menu
         self.options = QPushButton('', self)
@@ -276,7 +292,7 @@ class BoardVis(QMainWindow):
         self.options.setIcon(gear_icon)
         self.options.setIconSize(QSize(50,50))
         self.options.clicked.connect(self.theme_menu.show)
-        
+
         # This button allow you can stop your turn
         self.stopButton = QPushButton("End Turn", self)
 
@@ -309,7 +325,7 @@ class BoardVis(QMainWindow):
                         ["0", "0", "0", "0", "0", "0", "0", "0"],
                         ["0", "0", "0", "0", "0", "0", "0", "0"],
                         ["0", "0", "0", "0", "0", "0", "0", "0"]]
-        
+
         self.border = []
 
         self.welcomeText = QLabel(self)
@@ -341,6 +357,8 @@ class BoardVis(QMainWindow):
         self.diceRollResult = -1
 
         self.ai_player = None
+        self.sbs_delay_ms = 400
+        self.ai_move_delay_ms = 1000
 
         self.theme = None
 
@@ -441,18 +459,18 @@ class BoardVis(QMainWindow):
         if len(new_spots)>1:
             new_spots.reverse()
 
-            mv_delay = QTimer(self)
+            sbs_delay = QTimer(self)
 
             def spot_by_spot():
                 if len(new_spots)==0:
-                    mv_delay.stop()
+                    sbs_delay.stop()
                     return
                 x, y = new_spots.pop()
                 print(x,y)
                 piece.move(x, y)
 
-            mv_delay.timeout.connect(spot_by_spot)
-            mv_delay.start(500)
+            sbs_delay.timeout.connect(spot_by_spot)
+            sbs_delay.start(self.sbs_delay_ms)
         else:
             piece.move(new_spot[0], new_spot[1])
 
@@ -863,17 +881,62 @@ class BoardVis(QMainWindow):
                 captured.setParent(None)
 
     def make_AI_move(self):
+        global ai_turn
+        ai_turn = True
         if not self.computerButton.isChecked() or self.ai_turn_over():
+            ai_turn = False
             return      # ai not selected, bail out of function
-        self.ai_delay.start(1500)
+        self.ai_move_delay.start(self.ai_move_delay_ms)
 
     def ai_single_move(self):
-        self.ai_player.make_move()
-        self._update_pieces()
-        self.update_labels()
-        self.update_captured_pieces()
-        if self.ai_turn_over():
-            self.ai_delay.stop()
+        self.ai_move_delay.stop()
+
+        ai_mv_map = self.ai_player.moveMap()
+        ai_mv = self.ai_player.best_move(ai_mv_map)
+        to_x, to_y = ai_mv[0], ai_mv[1]
+        from_x, from_y = ai_mv[4], ai_mv[5]
+        ai_mv_piece = self.piecePos[from_y][from_x]
+        if type(ai_mv_piece).__name__ != 'PieceVis':
+            return
+
+        moveSuccessful = self.controller.move_piece(from_x=from_x, from_y=from_y,
+                                                    to_x=to_x, to_y=to_y)
+        if moveSuccessful:
+            new_spots = []
+            for x, y in self.controller.get_move_path():
+                new_spot = board_to_screen(x, y, self.tileSize)  # create pixel position of new piece
+                new_spots.append(new_spot)
+            ai_mv_piece.start[0] = to_x
+            ai_mv_piece.start[1] = to_y
+        else:
+            new_spots = []
+            new_spot = board_to_screen(from_x, from_y, self.tileSize)
+
+        def updates():
+            self._update_pieces()
+            self.update_labels()
+            self.update_captured_pieces()
+            self.make_AI_move()
+
+        if len(new_spots)>1:
+            new_spots.reverse()
+
+            ai_sbs_delay = QTimer(self)
+
+            def ai_spot_by_spot():
+                if len(new_spots)==0:
+                    ai_sbs_delay.stop()
+                    updates()
+                    return
+                x, y = new_spots.pop()
+                print(x,y)
+                ai_mv
+                ai_mv_piece.move(x, y)
+
+            ai_sbs_delay.timeout.connect(ai_spot_by_spot)
+            ai_sbs_delay.start(self.sbs_delay_ms)
+        else:
+            updates()
 
     def ai_turn_over(self):
         whites_turn = (self.controller.tracker.get_current_player()==1)
@@ -1171,7 +1234,7 @@ class BoardVis(QMainWindow):
             for i, (ltr, num) in enumerate(zip(letters, nums)):
                 self.border[0][i].setPixmap(QPixmap('./picture/' + border_bg+ltr))
                 self.border[1][i].setPixmap(QPixmap('./picture/' + border_bg+num))
-            
+
 
     def set_emptys(self, white, black, move_h, atk_h):
         is_white = True
@@ -1213,7 +1276,8 @@ class BoardVis(QMainWindow):
                 piece = piece_to_img_name(piece)
                 if not piece:
                     continue
-                label = PieceVis(piece + color_name, x, y, parent=self)
+                piece_color = 'white' if piece[0]=='w' else 'black'
+                label = PieceVis(piece + color_name, x, y, color=piece_color, parent=self)
                     # Set the image based on the array element.
                 label.resize(75, 75)
                 label.setScaledContents(True)
@@ -1469,7 +1533,7 @@ class ThemeMenu(QWidget):
         self.setWindowTitle("Theme Menu")
         self.hide()
         self.main_window = main_window
-        self.theme = 'default' 
+        self.theme = 'default'
         themes_layout = QVBoxLayout()
         themes_layout.addWidget( self.add_theme('default', 'defaultPreview') )
         themes_layout.addWidget( self.add_theme('wood', 'woodPreview') )
