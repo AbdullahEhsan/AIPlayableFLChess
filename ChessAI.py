@@ -116,6 +116,9 @@ class AIFunctions:
     def genHostileMap(self):
         x = 0
         y = 0
+
+        KingLocation = (0,5)
+
         self.hostilemap = [[0, 0, 0, 0, 0, 0, 0, 0],
                    [0, 0, 0, 0, 0, 0, 0, 0],
                    [0, 0, 0, 0, 0, 0, 0, 0],
@@ -128,6 +131,12 @@ class AIFunctions:
         for item in self.board:
             for item2 in item:
                 if item2.piece:
+                    if self.color == item2.piece.is_white():
+                        if (item2.piece.get_type() == 'King'):
+                            KingLocation = (y, x)
+                            print ('==========================================================')
+                            print('testing KingLocation', KingLocation ,'\n\n\n')
+
                     if self.color != item2.piece.is_white():
                         moveList = self.game.get_possible_moves_for_piece_at(x=y, y=x, ai_backdoor=True)
 
@@ -138,7 +147,37 @@ class AIFunctions:
                         else:
                             spotVal = .4
                         for a, b, c in moveList:
+                            #print ("Testing MoveList: ", moveList)
+                            # if (moveList[b][a] == KingLocation):
+                            #     self.hostilemap[b][a] -= 30
+                            #     print('==========================================================')
+                            #     print('testing King Move Success \n\n\n')
+
+                            new_y,new_x = KingLocation
+
+                            # print('==========================================================')
+                            # print('testing KingLocation', KingLocation, '\n\n\n')
+
                             self.hostilemap[b][a] += spotVal
+
+                            found = False
+                            for y_c in (-1, 0, 1):
+                                for x_c in (-1, 0, 1):
+                                    if (x_c, y_c) == (0, 0):
+                                        continue
+                                    la_x = a + x_c
+                                    la_y = b + y_c
+                                    if la_x > 7 or la_y > 7 or la_x < 0 or la_y < 0:
+                                        continue
+                                    found = (la_x, la_y) == KingLocation
+                                    if found:
+                                        print(self.hostilemap[b][a])
+                                        self.hostilemap[b][a] -= 1000
+                                        print (self.hostilemap[b][a])
+                                        break
+                                if found:
+                                    break
+
                 y = y + 1
             x = x + 1
             y = 0
@@ -215,7 +254,15 @@ class AIFunctions:
                                 if player == "black":
                                     if (m - x == 5 or x - m == 5 or l - y == 5):
                                         heatmap[m][l] += 4
-                            heatmap[m][l] += spotVal - self.hostilemap[m][l]
+                            if item2.piece.get_type() != 'King':
+                                hosval = self.hostilemap[m][l] % 1000
+                            else:
+                                hosval = self.hostilemap[m][l]
+                                print ('King Testing=======================:', hosval)
+
+                            print ('hosval Testing=======================:', hosval)
+
+                            heatmap[m][l] += spotVal - hosval
                         dataChunk = [item2.piece, heatmap]
 
 
