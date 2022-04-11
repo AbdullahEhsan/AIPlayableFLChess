@@ -1,10 +1,11 @@
 from math import floor
+from tokenize import String
 from typing import Tuple
 from xmlrpc.client import Boolean
 from PyQt5.QtCore import Qt, QPoint, QSize, QTimer
 from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, QGridLayout, \
     QComboBox, QRadioButton, QButtonGroup
-from PyQt5.QtGui import QPixmap, QMouseEvent, QFont,QMovie
+from PyQt5.QtGui import QPixmap, QMouseEvent, QFont,QMovie, QIcon
 from ChessAI import AIFunctions
 
 from ChessGame import Game as chess_game
@@ -261,9 +262,21 @@ class BoardVis(QMainWindow):
         self.setWindowTitle("Chess Board")
         self.highlighted = []
         self.corp_menu = CorpMenu(self)
+        self.theme_menu = ThemeMenu(400,400, self)
+        self.corner_tile = None
         self.ai_delay = QTimer(self)
         self.ai_delay.timeout.connect(self.ai_single_move)
         # buttons:
+        #displays theme menu
+        self.options = QPushButton('', self)
+        self.options.setFixedSize(50,50)
+        self.options.setStyleSheet("background-color: rgba(255, 255, 255, 0);")
+        gear_image = QPixmap('./picture/settingsGear')
+        gear_icon = QIcon(gear_image)
+        self.options.setIcon(gear_icon)
+        self.options.setIconSize(QSize(50,50))
+        self.options.clicked.connect(self.theme_menu.show)
+        
         # This button allow you can stop your turn
         self.stopButton = QPushButton("End Turn", self)
 
@@ -296,6 +309,8 @@ class BoardVis(QMainWindow):
                         ["0", "0", "0", "0", "0", "0", "0", "0"],
                         ["0", "0", "0", "0", "0", "0", "0", "0"],
                         ["0", "0", "0", "0", "0", "0", "0", "0"]]
+        
+        self.border = []
 
         self.welcomeText = QLabel(self)
         self.startScreen = QLabel(self)
@@ -351,6 +366,7 @@ class BoardVis(QMainWindow):
         }
 
         if theme not in themes:
+            print("didnt find theme")
             theme = "default"
 
         self.theme = themes[theme]
@@ -393,6 +409,10 @@ class BoardVis(QMainWindow):
 
         # board
         self.set_non_playables()
+
+    def update_chosen_theme(self):
+        theme = self.theme_menu.get_theme()
+        self.set_theme(theme)
 
     def do_piece_move(self, mvd_piece: PieceVis):
         print("was called")
@@ -453,6 +473,7 @@ class BoardVis(QMainWindow):
 
     def closeEvent(self,event):
         self.corp_menu.close()
+        self.theme_menu.close()
         event.accept()
 
     def set_h_mode(self, val: Boolean):
@@ -789,7 +810,7 @@ class BoardVis(QMainWindow):
         self.medievalButton.adjustSize()
         self.corpCommanderButton.adjustSize()
 
-        self.set_theme()
+        self.set_theme('wood')
 
         self.captured_by = {
             "white": [],
@@ -872,6 +893,7 @@ class BoardVis(QMainWindow):
         return
 
     def startGameClicked(self):
+        self.theme_menu.close()
         if self.medievalButton.isChecked():
             self.__game_type = "Medieval"
             self.corpButton.hide()
@@ -881,6 +903,7 @@ class BoardVis(QMainWindow):
         self.controller = chess_game(game_type=self.__game_type)
         if self.__game_type == "Corp":
             self.corp_menu = CorpMenu(self)
+
 
         self._update_pieces()
         self.update_labels()
@@ -1020,6 +1043,8 @@ class BoardVis(QMainWindow):
         self.startScreen.raise_()
         self.welcomeText.show()
         self.welcomeText.raise_()
+        self.options.show()
+        self.options.raise_()
 
         self.optionScreen.show()
         self.optionScreen.raise_()
@@ -1055,6 +1080,7 @@ class BoardVis(QMainWindow):
     def hideStartScreen(self):
         self.startScreen.hide()
         self.welcomeText.hide()
+        self.options.hide()
         self.whiteButton.hide()
         self.blackButton.hide()
         self.teamText.hide()
@@ -1115,37 +1141,52 @@ class BoardVis(QMainWindow):
 
     def set_non_playables(self):
         light, dark, border = self.theme['board']
-        label = self.mk_basic_label(border)
-        label.move(0, 0)
+        if self.corner_tile:
+            self.corner_tile.setPixmap(QPixmap('./picture/' + border))
+        else:
+            self.corner_tile = self.mk_basic_label(border)
+            self.corner_tile.move(0, 0)
         self.set_emptys(light, dark, "gt", "ot")
         self.set_lets_and_nums(border)
 
     def set_lets_and_nums(self, border_bg:str=""):
         letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
         nums = ["8", "7", "6", "5", "4", "3", "2", "1"]
-
-        if not self.white_pov:
-            letters.reverse()
-            nums.reverse()
-        for i, (ltr, num) in enumerate(zip(letters, nums)):
-            l1 = self.mk_basic_label(border_bg+ltr)
-            l2 = self.mk_basic_label(border_bg+num)
-            l1.move(int( (i + 1) * self.tileSize), 0)
-            l2.move(0, int( (i + 1) * self.tileSize))
-            l1.show()
-            l2.show()
+        if not len(self.border):
+            self.border.append([])
+            self.border.append([])
+            if not self.white_pov:
+                letters.reverse()
+                nums.reverse()
+            for i, (ltr, num) in enumerate(zip(letters, nums)):
+                l1 = self.mk_basic_label(border_bg+ltr)
+                l2 = self.mk_basic_label(border_bg+num)
+                l1.move(int( (i + 1) * self.tileSize), 0)
+                l2.move(0, int( (i + 1) * self.tileSize))
+                l1.show()
+                l2.show()
+                self.border[0].append(l1)
+                self.border[1].append(l2)
+        else:
+            for i, (ltr, num) in enumerate(zip(letters, nums)):
+                self.border[0][i].setPixmap(QPixmap('./picture/' + border_bg+ltr))
+                self.border[1][i].setPixmap(QPixmap('./picture/' + border_bg+num))
+            
 
     def set_emptys(self, white, black, move_h, atk_h):
         is_white = True
         for j in range(8):
             for i in range(8):
                 name = white if is_white else black
-                label = TileVis(name,  move_h, atk_h, parent=self)
-                label.setPixmap(QPixmap('./picture/' + name))
-                label.resize(75, 75)
-                label.setScaledContents(True)
-                label.move(int((i+1) * self.tileSize), int((j+1) * self.tileSize))
-                self.tilePos[j][i] = label
+                if self.tilePos[j][i] == "0":
+                    label = TileVis(name,  move_h, atk_h, parent=self)
+                    label.setPixmap(QPixmap('./picture/' + name))
+                    label.resize(75, 75)
+                    label.setScaledContents(True)
+                    label.move(int((i+1) * self.tileSize), int((j+1) * self.tileSize))
+                    self.tilePos[j][i] = label
+                else:
+                    self.tilePos[j][i].setPixmap(QPixmap('./picture/' + name))
                 is_white = not is_white
             is_white = not is_white
 
@@ -1400,3 +1441,53 @@ class CorpMenu(QWidget):
         current_group = self.col_layouts[i-1].itemAt(self.col_layouts[i-1].count() - 1).widget()
         self.col_layouts[i-1].replaceWidget(current_group, new_piece_group)
         current_group.setParent(None)
+
+class ThemeField(QWidget):
+    def __init__(self, name, img_name):
+        super(ThemeField,self).__init__()
+        self.theme_name = name
+        self.select_button = QPushButton('', self)
+        self.theme_preview = QLabel()
+        image = QPixmap('./picture/'+ img_name)
+        icon  = QIcon(image)
+        self.select_button.setIcon(icon)
+        self.select_button.setFixedSize(300,150)
+        self.select_button.setIconSize(QSize(300,300))
+        theme_pair = QHBoxLayout()
+        theme_pair.addWidget(self.select_button)
+        self.setLayout(theme_pair)
+
+    def set_click_func(self, func):
+        self.select_button.clicked.connect(lambda:  func(self.theme_name))
+
+    def get_theme(self):
+        return self.theme_name
+
+class ThemeMenu(QWidget):
+    def __init__(self, x_size, y_size, main_window):
+        super(ThemeMenu, self).__init__()
+        self.setWindowTitle("Theme Menu")
+        self.hide()
+        self.main_window = main_window
+        self.theme = 'default' 
+        themes_layout = QVBoxLayout()
+        themes_layout.addWidget( self.add_theme('default', 'defaultPreview') )
+        themes_layout.addWidget( self.add_theme('wood', 'woodPreview') )
+        themes_layout.addWidget( self.add_theme('marble', 'marblePreview') )
+        themes_layout.addStretch(5)
+        themes_layout.setSpacing(0)
+        self.setLayout(themes_layout)
+
+
+
+    def get_theme(self) -> String:
+        return self.theme
+
+    def set_theme(self, name):
+        self.main_window.set_theme(name)
+
+
+    def add_theme(self, name, img):
+        theme = ThemeField(name, img)
+        theme.set_click_func(self.set_theme)
+        return theme
