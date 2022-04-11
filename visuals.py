@@ -586,7 +586,7 @@ class BoardVis(QMainWindow):
         self.bCapturedText.resize(200, 25)
         font = QFont()
         font.setBold(True)
-        font.setFamily("Castellar, Baskerville")
+        font.setFamily("Baskerville")
         font.setPixelSize(self.moveIndicator.height() * 0.6)
         self.bCapturedText.setFont(font)
         self.bCapturedText.move(

@@ -1,4 +1,4 @@
-#  AI Playable Fuzzy Logic Chess Variants<br/>Senior Project Group 4B
+#  AI Playable Fuzzy Logic Chess Variants <br/>Senior Project Group 4B
 
 This project implements 2 variants of Chess:
 1. **Fuzzy Logic Medieval Chess**
@@ -15,16 +15,20 @@ This project implements 2 variants of Chess:
    - If captured, a Bishop's commanded pieces revert to the authority of the King, and the move(s) for that corp are no longer available i.e. there is one less move per turn.
    - The Bishops will not fight on without their King; the game ends with the capture of a King.
 
+## Compatible Python Versions
+- Untested on versions <3.8.9
+- Known to work on versions 3.8.9 - 3.9.11
+- Broken on >=3.10.x
+
 ## Status:
 - **Frontend**: Refinement 🟢
 - **Backend**: Refinement 🟢
 - **AI**: Developing 🟡
 
 ## Contributors:
-- [**Abdullah**](https://github.com/AbdullahEhsan) (Backend, assisted with AI and Frontend)
+- [**Abdullah**](https://github.com/AbdullahEhsan) (Backend, Frontend, assisted with AI)
 - [**Ben**](https://github.com/bbeebe1) (Backend)
 - [**Brian**](https://github.com/Bkim0316) (AI, assisted with Backend)
 - [**Eric**](https://github.com/Ericphan7) (Frontend)
-- [**Kevinpaul**](https://github.com/kevinpaulguna) (initially assigned to Frontend, now assigned to AI)
 - [**Seth**](https://github.com/ExhaustedDev) (Frontend, Backend)
 - [**Teddy**](https://github.com/ted4bartz) (AI)
