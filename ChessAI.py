@@ -49,7 +49,7 @@ class AIFunctions:
             print(lcore - kcore)
             if(lcore - kcore>=2):
                 print("taking rook from lcore")
-                # TODO: get location of designated piece(ensuring its still in play) 
+                # TODO: get location of designated piece(ensuring its still in play)
                 #  and return the piece as an object along with the corp it should be changed to
             else:
                 print("taking pawn from lcore")
@@ -257,34 +257,34 @@ class AIFunctions:
                                 heatmap[m][l] += 1
                                 if player == "white":
                                     if (m - x == 2 or x - m == 2 or y - l == 2):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 2
                                 if player == "black":
                                     if (m - x == 2 or x - m == 2 or l - y == 2):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 2
                             elif (m - x == 3 or x - m == 3 or y - l == 3 or l - y == 3):
                                 heatmap[m][l] += 2
                                 if player == "white":
                                     if (m - x == 3 or x - m == 3 or y - l == 3):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 3
                                 if player == "black":
                                     if (m - x == 3 or x - m == 3 or l - y == 3):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 3
                             elif (m - x == 4 or x - m == 4 or y - l == 4 or l - y == 4):
-                                heatmap[m][l] += 2
+                                heatmap[m][l] += 3
                                 if player == "white":
                                     if (m - x == 4 or x - m == 4 or y - l == 4):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 4
                                 if player == "black":
                                     if (m - x == 2 or x - m == 2 or l - y == 2):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 4
                             elif (m - x == 5 or x - m == 5 or y - l == 5 or l - y == 5):
                                 heatmap[m][l] += 3
                                 if player == "white":
                                     if (m - x == 5 or x - m == 5 or y - l == 5):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 4
                                 if player == "black":
                                     if (m - x == 5 or x - m == 5 or l - y == 5):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 4
                             if item2.piece.get_type() != 'King':
                                 hosval = self.hostilemap[m][l] % 1000
                             else:
