@@ -26,6 +26,57 @@ class AIFunctions:
     def updateBoard(self):
         self.board = self.game._get_board()
 
+    def corpBalance(self):
+        lcore = 0
+        rcore = 0
+        kcore = 0
+        pawnString = ""
+        rookString = ""
+        for item in self.board:
+            for item2 in item:
+                if item2.piece:
+                    if self.color == item2.piece.is_white():
+                        if item2.piece.get_corp() == 'corpW1' or item2.piece.get_corp() == 'corpB1':
+                            kcore = kcore + self.pieceweight(item2.piece)
+                        elif item2.piece.get_corp() == 'corpW2' or item2.piece.get_corp() == 'corpB2':
+                            lcore = lcore + self.pieceweight(item2.piece)
+                        elif item2.piece.get_corp() == 'corpW2'  or item2.piece.get_corp() == 'corpB3':
+                            rcore = rcore + self.pieceweight(item2.piece)
+
+        #checks if a corp has more than the king
+        #if so, the king takes a piece from that corp
+        if kcore - rcore > kcore - lcore:
+            print(lcore - kcore)
+            if(lcore - kcore>=2):
+                print("taking rook from lcore")
+                # TODO: get location of designated piece(ensuring its still in play) 
+                #  and return the piece as an object along with the corp it should be changed to
+            else:
+                print("taking pawn from lcore")
+        elif kcore - rcore < kcore - lcore:
+            print(rcore - kcore)
+            if (rcore - kcore >= 2):
+                print("taking rook from rcore")
+            else:
+                print("taking pawn from rcore")
+
+
+
+    #rcore 7
+    #lcore 7
+    #kcore 10
+    #idea is to balance corps out. IE, if the kings corp loses
+    #a power piece, the bishops will
+    def pieceweight(self, piece):
+        if piece.get_type() == 'Pawn':
+            return 1
+        elif piece.get_type() == 'Rook':
+            return 2
+        elif piece.get_type() == 'Knight':
+            return 4
+        elif piece.get_type() == 'Queen':
+            return 4
+
     def __get_position_of_piece(self, piece_name: str):
         if len(piece_name) == 0 or piece_name[0] not in ('w', 'b'):
             print('empty or not w or not b')
@@ -56,8 +107,6 @@ class AIFunctions:
 
     # weights attack areas based on friendly piece power
     def attackRef(self, x, y, piece):
-        a = 0
-        b = 0
         defpiece = None
         for item in self.board:
             for item2 in item:
@@ -67,8 +116,7 @@ class AIFunctions:
                 a = a + 1
             b = b + 1
             a = 0
-
-        # TODO: case needs to be handled where defpiece isn't assigned or determine why it isn't
+        #case needs to be handled where defpiece isn't assigned or determine why it isn't
         if defpiece:
             type = defpiece.get_type()
         else:
@@ -534,14 +582,3 @@ class AIFunctions:
             print(colour, "team had", self.total_success_moves, 'successful moves out of', self.total_moves_attempted,
                   'this turn')
 
-
-# aiAssistWhite = AIFunctions(game, True)
-# aiAssistBlack = AIFunctions(game, False)
-#
-#
-# for num in range (44):
-#     if game.tracker.get_current_player():
-#         aiAssistWhite.make_move()
-#     else:
-#         aiAssistBlack.make_move()
-#
