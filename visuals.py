@@ -1,21 +1,18 @@
-from ast import Del
-from dataclasses import replace
 from math import floor
-from shutil import move
-import time
-from turtle import color
+from tokenize import String
 from typing import Tuple
 from xmlrpc.client import Boolean
 from PyQt5.QtCore import Qt, QPoint, QSize, QTimer
-from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, QGridLayout,QComboBox, QRadioButton, QButtonGroup, QApplication
-from PyQt5.QtGui import QPixmap, QMouseEvent, QFont,QMovie
+from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, QGridLayout, \
+    QComboBox, QRadioButton, QButtonGroup
+from PyQt5.QtGui import QPixmap, QMouseEvent, QFont,QMovie, QIcon
 from ChessAI import AIFunctions
 
-
-from ChessGame import Game as chess_game, Piece
+from ChessGame import Game as chess_game
 
 game_over = False
 lock_input = False
+ai_turn = False
 
 def corp_to_color(corp_num):
     colors = ['', 'rd', 'bl', 'gr']
@@ -47,7 +44,6 @@ def piece_to_img_name(piece):
         piece_name = piece[:2]
     return piece_name
 
-
 class corpVis(QLabel):
     def __init__(self, vis, name, size, parent=None):
         super(corpVis, self).__init__()
@@ -60,11 +56,13 @@ class corpVis(QLabel):
     #This function is snap the piece back to it place when the person releases wrong place
     #obsoleted
 
-
 class PieceVis(QLabel):
-    def __init__(self, visual, x_pos, y_pos, parent=None):
+    def __init__(self, visual, x_pos, y_pos, color:str='', parent=None):
         super(PieceVis, self).__init__(parent)
 
+        if color not in ('white', 'black'):
+            color = ''
+        self.color = color
         # Set up some properties
         self.labelPos = QPoint()
         self.vis = visual
@@ -85,8 +83,18 @@ class PieceVis(QLabel):
     def set_img(self):
         self.setPixmap(self.default_vis)
 
+    def not_same_team(self):
+        is_white = self.color == 'white'
+        whites_turn = (self.parent().controller.tracker.get_current_player()==1)
+        return whites_turn != is_white
+
+    def should_freeze(self):
+        tile_not_active = not self.parent().tilePos[self.start[1]][self.start[0]].get_active()
+
+        return game_over or ai_turn or (tile_not_active and self.not_same_team())
+
     def mousePressEvent(self, ev: QMouseEvent) -> None:
-        if game_over == True:
+        if self.should_freeze():
             return
         if lock_input == True:
             return
@@ -98,7 +106,8 @@ class PieceVis(QLabel):
 
     # Set the region limits of the board that the piece can move to
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:
-        if game_over == True:
+        # doesn't use should_freeze to allow for attacks
+        if game_over or ai_turn or self.not_same_team():
             return
         if lock_input == True:
             return
@@ -155,7 +164,7 @@ class PieceVis(QLabel):
     def mouseReleaseEvent(self, ev: QMouseEvent) -> None:
         drag_move = False
         click_end = False
-        if game_over == True:
+        if self.should_freeze():
             return
         if lock_input == True:
             return
@@ -185,6 +194,7 @@ class PieceVis(QLabel):
             self.parent().add_group_h(self.moves)
 
         if drag_move:
+            self.parent().setMoveStart(self.start)
             self.parent().move_end = self.end
             self.parent().do_piece_move(self)
 
@@ -215,8 +225,6 @@ class PieceVis(QLabel):
     def same_loc(self, s_loc, f_loc):
         return (s_loc[0] == f_loc[0]) and (s_loc[1] == f_loc[1])
 
-
-
 class TileVis(QLabel):
     def __init__(self, visual, move, attack, parent=None):
         super(TileVis, self).__init__(parent)
@@ -229,6 +237,10 @@ class TileVis(QLabel):
         self.atk_highlight.setStyleSheet("background-color: rgba(255,69,0,150)")
         self.atk_highlight.resize(75, 75)
         self.default_vis = QPixmap('./picture/' + visual)
+        self.set_img(False)
+
+    def set_default_vis(self, new_pixmap:QPixmap):
+        self.default_vis = new_pixmap
         self.set_img(False)
 
     def set_active(self, val, atk=False):
@@ -276,13 +288,28 @@ class BoardVis(QMainWindow):
         self.setWindowTitle("Chess Board")
         self.highlighted = []
         self.corp_menu = CorpMenu(self)
+        self.ai_move_delay = QTimer(self)
+        self.ai_move_delay.timeout.connect(self.ai_single_move)
+
+        self.theme_menu = ThemeMenu(400,400, self)
+        self.corner_tile = None
+
         # buttons:
+        #displays theme menu
+        self.options = QPushButton('', self)
+        self.options.setFixedSize(50,50)
+        self.options.setStyleSheet("background-color: rgba(255, 255, 255, 0);")
+        gear_image = QPixmap('./picture/settingsGear')
+        gear_icon = QIcon(gear_image)
+        self.options.setIcon(gear_icon)
+        self.options.setIconSize(QSize(50,50))
+        self.options.clicked.connect(self.theme_menu.show)
+
         # This button allow you can stop your turn
         self.stopButton = QPushButton("End Turn", self)
 
         # This button allow you can reset the game when you want to start new game
         self.newGameButton = QPushButton("Restart", self)
-
 
         # choose highlight mode on/off
         self.corpButton = QPushButton("Manage Corps", self)
@@ -311,7 +338,9 @@ class BoardVis(QMainWindow):
                         ["0", "0", "0", "0", "0", "0", "0", "0"],
                         ["0", "0", "0", "0", "0", "0", "0", "0"]]
 
-        self.chooseSideText = QLabel(self)
+        self.border = []
+
+        self.welcomeText = QLabel(self)
         self.startScreen = QLabel(self)
         self.optionScreen = QLabel(self)
         self.teamText = QLabel(self)
@@ -320,7 +349,7 @@ class BoardVis(QMainWindow):
         self.gameTypeText = QLabel(self)
 
         #set up the buttons
-        self.startGame= QPushButton("Start game",self)
+        self.startGameButton= QPushButton("Start game",self)
         self.whiteButton = QRadioButton("White side", self)
         self.blackButton = QRadioButton("Black side", self)
         self.humanButton = QRadioButton("Human", self)
@@ -341,8 +370,80 @@ class BoardVis(QMainWindow):
         self.diceRollResult = -1
 
         self.ai_player = None
+        self.sbs_delay_ms = 400
+        self.ai_move_delay_ms = 1000
+
+        self.theme = None
 
         self.showBoard()
+
+    def set_theme(self, theme:str = 'default'):
+        themes = {
+            'default': {
+                'splash': './picture/defaultChessSplash.png',
+                'color': 'rgb(0, 204, 204)',
+                'board': ('wt', 'bt', 'bt') #light_tile, dark_tile, border_tile
+                },
+            'wood': {
+                'splash': './picture/woodChessSplash.png',
+                'color': 'rgb(227, 217, 197)',
+                'board': ('lwt', 'dwt', 'lwt')
+                },
+            'marble': {
+                'splash': './picture/marbleChessSplash.png',
+                'color': 'white',
+                'board': ('wmt', 'gmt', 'wmt')
+                },
+        }
+
+        if theme not in themes:
+            print("didnt find theme")
+            theme = "default"
+
+        self.theme = themes[theme]
+        splash_img = self.theme["splash"]
+        color = self.theme["color"]
+
+        self.startScreen.setStyleSheet(f'background-image: url({splash_img});')
+        self.pauseBackground.setStyleSheet(f'background-image: url({splash_img});')
+
+        button_css = f'''
+            QPushButton {{
+                background-color: {color};
+                color: black;
+                border: 0.1em solid #000000;
+            }}
+            QPushButton:hover {{
+                background-color: black;
+                color: {color};
+                border-color: {color};
+            }}
+            '''
+        text_css = f'font-weight: bold; color: {color}'
+        alt_text_css = 'font-weight: bold; color: rgb(10, 110, 80)'
+
+        # start screen
+        self.welcomeText.setStyleSheet(alt_text_css if theme=='marble' else text_css)
+
+        self.teamText.setStyleSheet(text_css)
+        self.gameTypeText.setStyleSheet(text_css)
+        self.opponentText.setStyleSheet(text_css)
+        self.highlightText.setStyleSheet(text_css)
+
+        self.startGameButton.setStyleSheet(button_css)
+
+        # roll dice screen
+        self.rollText.setStyleSheet(alt_text_css if theme=='marble' else text_css)
+        self.resultCaptureText.setStyleSheet(alt_text_css if theme=='marble' else text_css)
+
+        self.okayButton.setStyleSheet(button_css)
+
+        # board
+        self.set_non_playables()
+
+    def update_chosen_theme(self):
+        theme = self.theme_menu.get_theme()
+        self.set_theme(theme)
 
     def do_piece_move(self, mvd_piece: PieceVis):
         print("was called")
@@ -355,20 +456,43 @@ class BoardVis(QMainWindow):
         moveSuccessful = self.controller.move_piece(from_x=self.move_start[0], from_y=self.move_start[1],
                                                     to_x=self.move_end[0], to_y=self.move_end[1])
         self.diceRollResult = self.controller.get_result_of_dice_roll()
-        self.make_AI_move()
+        new_spots = []
         if moveSuccessful:
-            self._update_pieces()
-            new_spot = board_to_screen(self.move_end[0], self.move_end[1],
-                                       self.tileSize)  # create pixel position of new piece
+            for x, y in self.controller.get_move_path():
+                new_spot = board_to_screen(x, y, self.tileSize)  # create pixel position of new piece
+                new_spots.append(new_spot)
+            if len(new_spots) == 0:
+                new_spot = board_to_screen(self.move_start[0], self.move_start[1], self.tileSize)
             piece.start[0] = self.move_end[0]
             piece.start[1] = self.move_end[1]
         else:
             new_spot = board_to_screen(self.move_start[0], self.move_start[1], self.tileSize)
         print("moved piece: ", piece)
-        piece.move(new_spot[0], new_spot[1])
-        
+        # piece.move(new_spot[0], new_spot[1])
+        if len(new_spots)>1:
+            new_spots.reverse()
+
+            sbs_delay = QTimer(self)
+
+            def spot_by_spot():
+                if len(new_spots)==0:
+                    sbs_delay.stop()
+                    return
+                x, y = new_spots.pop()
+                print(x,y)
+                piece.move(x, y)
+
+            sbs_delay.timeout.connect(spot_by_spot)
+            sbs_delay.start(self.sbs_delay_ms)
+        else:
+            piece.move(new_spot[0], new_spot[1])
+
         if isAttack:
+            self._update_pieces()
             self.rollDiceScreen(moveSuccessful)
+        else:
+            self.make_AI_move() #TODO: find place for this after update pieces is fixed
+
         self.update_labels()
 
         self.reset_movement_data()
@@ -380,6 +504,7 @@ class BoardVis(QMainWindow):
 
     def closeEvent(self,event):
         self.corp_menu.close()
+        self.theme_menu.close()
         event.accept()
 
     def set_h_mode(self, val: Boolean):
@@ -426,8 +551,6 @@ class BoardVis(QMainWindow):
     def setBoard(self):
         self.tileSize = 75
         self.boardSize = self.tileSize * 9.5
-        #add the tile images
-        self.set_non_playables()
 
         #get data from controller and display it
 
@@ -440,7 +563,7 @@ class BoardVis(QMainWindow):
         font.setPixelSize(self.tableOption.height() * 0.8)
         self.tableOption.setFont(font)
         self.tableOption.move(int(self.boardSize) - 10,
-                              int(self.boardSize /2 -75) - (self.tableOption.height()) * 0.5)
+                              int(self.boardSize /2 -75) - (self.tableOption.height()) * 0.5 +20)
         self.tableOption.hide()
 
     #Create show information of move indicator
@@ -452,7 +575,7 @@ class BoardVis(QMainWindow):
         font.setPixelSize(self.moveIndicator.height() * 0.8)
         self.moveIndicator.setFont(font)
         self.moveIndicator.move(int(self.boardSize) - 10,
-                                int(self.boardSize /2)- (self.moveIndicator.height()) * 0.5)
+                                int(self.boardSize /2)- (self.moveIndicator.height()) * 0.5 - 20)
         self.moveIndicator.hide()
 
     #manage corp button setup:
@@ -462,6 +585,51 @@ class BoardVis(QMainWindow):
         self.corpButton.resize(180,40)
         self.corpButton.move(int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2)) - 50,
                              25)
+
+        self.wCapturedText = QLabel(self)
+        self.wCapturedFrame = QFrame(self)
+
+        self.bCapturedText = QLabel(self)
+        self.bCapturedFrame = QFrame(self)
+
+        # Create white pieces captured
+        self.wCapturedText.setText("CAPTURED BY WHITE")
+        self.wCapturedText.setAlignment(Qt.AlignCenter)
+        self.wCapturedText.resize(200, 25)
+        font = QFont()
+        font.setBold(True)
+        font.setFamily("Baskerville")
+        font.setPixelSize(self.moveIndicator.height() * 0.6)
+        self.wCapturedText.setFont(font)
+        self.wCapturedText.move(int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2)) - 60,
+                             390)
+
+        #set frame for wCapturedPic:
+        self.wCapturedFrame.setFrameShape(QFrame.Box)
+        self.wCapturedFrame.setLineWidth(2)
+        self.wCapturedFrame.setGeometry(int(self.boardSize) - 10,
+                                      420,
+                                      200, 140)
+
+        # Create black pieces captured
+        self.bCapturedText.setText("CAPTURED BY BLACK")
+        self.bCapturedText.setAlignment(Qt.AlignCenter)
+        self.bCapturedText.resize(200, 25)
+        font = QFont()
+        font.setBold(True)
+        font.setFamily("Baskerville")
+        font.setPixelSize(self.moveIndicator.height() * 0.6)
+        self.bCapturedText.setFont(font)
+        self.bCapturedText.move(
+            int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2)) - 60,
+            95)
+
+        # set frame for bCapturedPic:
+        self.bCapturedFrame.setFrameShape(QFrame.Box)
+        self.bCapturedFrame.setLineWidth(2)
+        self.bCapturedFrame.setGeometry(int(self.boardSize) - 10,
+                                        125,
+                                        200, 140)
 
         if self.__game_type != "Corp":
             self.corpButton.hide()
@@ -488,46 +656,32 @@ class BoardVis(QMainWindow):
         # Create StartScreen properties
         self.startScreen.setAlignment(Qt.AlignCenter)
         self.startScreen.resize(925, 675)
-        self.startScreen.setStyleSheet("background-image: url(./picture/fullstartscreen.png);")
+        self.startScreen.setStyleSheet("background-image: url(./picture/defaultChessSplash.png);")
         self.startScreen.move(0, 0)
 
         moveIntoSidePanel = ((925-self.boardSize)/2)
 
         # Set up choose side text properties
-        self.chooseSideText.setAlignment(Qt.AlignCenter)
-        self.chooseSideText.setText("Welcome to Fuzzy Logic Chess!"
+        self.welcomeText.setAlignment(Qt.AlignCenter)
+        self.welcomeText.setText("Welcome to Fuzzy Logic Chess!"
                                     "\nGame Setup:")
-        self.chooseSideText.resize(900, 100)
+        self.welcomeText.resize(900, 100)
         font = QFont()
         font.setFamily('Arial')
-        font.setPixelSize(self.chooseSideText.height() * 0.4)
-        self.chooseSideText.setFont(font)
-        self.chooseSideText.setStyleSheet('font-weight: bold; color: rgba(0, 204, 204, 255)')
-        self.chooseSideText.move(int((self.boardSize / 2) - (self.chooseSideText.width() / 2)) + moveIntoSidePanel,
+        font.setPixelSize(self.welcomeText.height() * 0.4)
+        self.welcomeText.setFont(font)
+        self.welcomeText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + moveIntoSidePanel,
                                  int((self.boardSize / 2) - 300))
-        self.chooseSideText.hide()
+        self.welcomeText.hide()
 
 
         # Create start screen properties
         self.pauseBackground.setAlignment(Qt.AlignCenter)
         self.pauseBackground.resize(925, 675)
         self.pauseBackground.setStyleSheet('background-color: black')
-        self.pauseBackground.setStyleSheet("background-image: url(./picture/fullstartscreen.png);")
+        self.pauseBackground.setStyleSheet("background-image: url(./picture/defaultChessSplash.png);")
         self.pauseBackground.move(0, 0)
         self.pauseBackground.hide()
-
-        mainAreaButtonCSS = '''
-            QPushButton {
-                background-color: rgb(0, 204, 204);
-                color: black;
-                border: 0.1em solid #000000;
-            }
-            QPushButton:hover {
-                background-color: black;
-                color: rgb(0, 204, 204);
-                border-color: rgb(0, 204, 204);
-            }
-            '''
 
         # Set up for okay button properties
         self.okayButton.clicked.connect(self.okayButtonClicked)
@@ -536,7 +690,6 @@ class BoardVis(QMainWindow):
         font.setFamily('Arial')
         font.setPixelSize(self.okayButton.height() * 0.4)
         self.okayButton.setFont(font)
-        self.okayButton.setStyleSheet(mainAreaButtonCSS)
         self.okayButton.move(int((self.boardSize / 2) - (self.okayButton.width() / 2)) + moveIntoSidePanel
                              , int((self.boardSize / 2) + 250))
         self.okayButton.hide()
@@ -550,18 +703,15 @@ class BoardVis(QMainWindow):
         self.optionScreen.hide()
 
         # Set up for start game button properties
-        self.startGame.clicked.connect(self.startGameClicked)
-        self.startGame.resize(150, 40)
+        self.startGameButton.clicked.connect(self.startGameClicked)
+        self.startGameButton.resize(150, 40)
         font = QFont()
         font.setFamily('Arial')
-        font.setPixelSize(self.startGame.height() * 0.4)
-        self.startGame.setFont(font)
-        self.startGame.setStyleSheet(mainAreaButtonCSS)
-        self.startGame.move(int((self.boardSize / 2) - (self.startGame.width() / 2)) + moveIntoSidePanel
+        font.setPixelSize(self.startGameButton.height() * 0.4)
+        self.startGameButton.setFont(font)
+        self.startGameButton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel
                             , int((self.boardSize / 2) + 250))
-        self.startGame.hide()
-
-        optionsTitlesCSS = 'font-weight: bold; color: rgb(0, 204, 204)'
+        self.startGameButton.hide()
 
         #set up team text properties
         self.teamText.setAlignment(Qt.AlignCenter)
@@ -571,8 +721,7 @@ class BoardVis(QMainWindow):
         font.setFamily('Arial')
         font.setPixelSize(self.teamText.height() * 0.2)
         self.teamText.setFont(font)
-        self.teamText.setStyleSheet(optionsTitlesCSS)
-        self.teamText.move(int((self.boardSize / 2) - (self.chooseSideText.width() / 2)) + 200 + moveIntoSidePanel,
+        self.teamText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
                                   int((self.boardSize / 2) - 175))
         self.teamText.hide()
 
@@ -584,12 +733,11 @@ class BoardVis(QMainWindow):
         font.setFamily('Arial')
         font.setPixelSize(self.teamText.height() * 0.2)
         self.opponentText.setFont(font)
-        self.opponentText.setStyleSheet(optionsTitlesCSS)
-        self.opponentText.move(int((self.boardSize / 2) - (self.chooseSideText.width() / 2)) + 200 + moveIntoSidePanel,
+        self.opponentText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
                                int((self.boardSize / 2) - 95))
         self.opponentText.hide()
-        
-        
+
+
 
         #set up highlight text properties
         self.highlightText.setAlignment(Qt.AlignCenter)
@@ -599,8 +747,7 @@ class BoardVis(QMainWindow):
         font.setFamily('Arial')
         font.setPixelSize(self.teamText.height() * 0.2)
         self.highlightText.setFont(font)
-        self.highlightText.setStyleSheet(optionsTitlesCSS)
-        self.highlightText.move(int((self.boardSize / 2) - (self.chooseSideText.width() / 2)) + 200 + moveIntoSidePanel,
+        self.highlightText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
                                 int((self.boardSize / 2) - 5))
         self.highlightText.hide()
 
@@ -612,8 +759,7 @@ class BoardVis(QMainWindow):
         font.setFamily('Arial')
         font.setPixelSize(self.teamText.height() * 0.2)
         self.gameTypeText.setFont(font)
-        self.gameTypeText.setStyleSheet(optionsTitlesCSS)
-        self.gameTypeText.move(int((self.boardSize / 2) - (self.chooseSideText.width() / 2)) + 200 + moveIntoSidePanel,
+        self.gameTypeText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
                                int((self.boardSize / 2) + 85))
         self.gameTypeText.hide()
 
@@ -658,13 +804,13 @@ class BoardVis(QMainWindow):
         self.computerButton.setStyleSheet(radioButtonTextCSS)
         self.humanButton.adjustSize()
         self.computerButton.adjustSize()
-        
-        
+
+
         self.opponent_group.addButton(self.AivAiButton, 3)
         self.__set_button(self.AivAiButton, 0.4)
         self.AivAiButton.move(int((self.boardSize / 2) - (self.blackButton.width() / 2) - 100) + moveIntoSidePanel
                               , int((self.boardSize / 2) - 10))
-        
+
         self.AivAiButton.setStyleSheet(radioButtonTextCSS)
         self.AivAiButton.adjustSize()
 
@@ -706,27 +852,123 @@ class BoardVis(QMainWindow):
         self.medievalButton.adjustSize()
         self.corpCommanderButton.adjustSize()
 
+        self.set_theme()
+
+        self.captured_by = {
+            "white": [],
+            "black": []
+        }
+
+    def update_captured_pieces(self):
+        self.delete_captured_pieces()
+        self.updated_captured_by('black')
+        self.updated_captured_by('white')
+        self.show_captured_pieces()
+
+    def updated_captured_by(self, color:str):
+        if color == 'white':
+            starting = 425
+        elif color == 'black':
+            starting = 130
+        else:
+            return
+
+        captured = [piece_to_img_name(piece[0]).lower()+".png" for piece in self.controller.get_pieces_captured_by(color)]
+
+        self.captured_by[color] = []
+
+        img_size = 35
+        offset = 40
+        for i, pc in enumerate(captured):
+
+            captured_pc = QLabel(self)
+            captured_pc.setAlignment(Qt.AlignCenter)
+            cap = QPixmap('./picture/' + pc)
+            cap = cap.scaled(img_size, img_size)
+            captured_pc.setPixmap(cap)
+            captured_pc.resize(img_size, img_size)
+            captured_pc.move(
+                int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2)) - 10 + (img_size*(i%5)),
+                    starting + (offset*int(i/5))
+            )
+            self.captured_by[color].append(captured_pc)
+            # setattr(self, "wCapturedPic{}".format(i), self.wCapturedPic)
+
+    def show_captured_pieces(self):
+        for team in self.captured_by.values():
+            for captured in team:
+                captured.show()
+
+    def delete_captured_pieces(self):
+        for team in self.captured_by.values():
+            for captured in team:
+                captured.setParent(None)
+
     def make_AI_move(self):
-        white_player = (self.controller.tracker.get_current_player()==1)
-        if self.computerButton.isChecked() and self.whiteButton.isChecked()!=white_player and not self.controller.game_status():
-            while self.whiteButton.isChecked()!=white_player and not self.controller.game_status():
-                self.ai_player.make_move()
-                white_player = (self.controller.tracker.get_current_player()==1)
-                self._update_pieces()
-                self.update_labels()
-                if self.controller.game_status():
-                    global game_over
-                    game_over = True
-                    self.stopButton.hide()
-                    self.moveIndicator.hide()
-                    self.tableOption.setText("Winner: " +
-                                            ("White" if self.controller.tracker.get_current_player() else "Black") +
-                                            " Team!")
+        global ai_turn
+        ai_turn = True
+        if not self.computerButton.isChecked() or self.ai_turn_over():
+            ai_turn = False
+            return      # ai not selected, bail out of function
+        self.ai_move_delay.start(self.ai_move_delay_ms)
+
+    def ai_single_move(self):
+        self.ai_move_delay.stop()
+
+        ai_mv_map = self.ai_player.moveMap()
+        ai_mv = self.ai_player.best_move(ai_mv_map)
+        to_x, to_y = ai_mv[0], ai_mv[1]
+        from_x, from_y = ai_mv[4], ai_mv[5]
+        ai_mv_piece = self.piecePos[from_y][from_x]
+        if type(ai_mv_piece).__name__ != 'PieceVis':
+            return
+
+        moveSuccessful = self.controller.move_piece(from_x=from_x, from_y=from_y,
+                                                    to_x=to_x, to_y=to_y)
+        if moveSuccessful:
+            new_spots = []
+            for x, y in self.controller.get_move_path():
+                new_spot = board_to_screen(x, y, self.tileSize)  # create pixel position of new piece
+                new_spots.append(new_spot)
+            ai_mv_piece.start[0] = to_x
+            ai_mv_piece.start[1] = to_y
+        else:
+            new_spots = []
+            new_spot = board_to_screen(from_x, from_y, self.tileSize)
+
+        def updates():
+            self._update_pieces()
+            self.update_labels()
+            self.update_captured_pieces()
+            self.make_AI_move()
+
+        if len(new_spots)>1:
+            new_spots.reverse()
+
+            ai_sbs_delay = QTimer(self)
+
+            def ai_spot_by_spot():
+                if len(new_spots)==0:
+                    ai_sbs_delay.stop()
+                    updates()
                     return
-                
-                
-                
-                
+                x, y = new_spots.pop()
+                print(x,y)
+                ai_mv
+                ai_mv_piece.move(x, y)
+
+            ai_sbs_delay.timeout.connect(ai_spot_by_spot)
+            ai_sbs_delay.start(self.sbs_delay_ms)
+        else:
+            updates()
+
+    def ai_turn_over(self):
+        whites_turn = (self.controller.tracker.get_current_player()==1)
+        if self.controller.is_game_over():  # special case for gameover
+            self.handle_gameover()
+            return True
+        return self.whiteButton.isChecked() == whites_turn    # the active color is the color the human chose, no longer computer's turn
+
     def AIvAI(self):
         white_player = (self.controller.tracker.get_current_player()==1)
         if white_player == True and not self.controller.game_status():
@@ -747,7 +989,6 @@ class BoardVis(QMainWindow):
                 lock_input = False
                 return
             return
-
         if white_player == False and not self.controller.game_status():
             self.ai_2.make_move()
             white_player = (self.controller.tracker.get_current_player()==1)
@@ -765,9 +1006,18 @@ class BoardVis(QMainWindow):
                 return
             return
 
-        
-        
+    def handle_gameover(self):
+        global game_over
+        game_over = True
+        self.stopButton.hide()
+        self.moveIndicator.hide()
+        self.tableOption.setText("Winner: " +
+                                ("White" if self.controller.tracker.get_current_player() else "Black") +
+                                " Team!")
+        return
+
     def startGameClicked(self):
+        self.theme_menu.close()
         if self.medievalButton.isChecked():
             self.__game_type = "Medieval"
             self.corpButton.hide()
@@ -778,8 +1028,10 @@ class BoardVis(QMainWindow):
         if self.__game_type == "Corp":
             self.corp_menu = CorpMenu(self)
 
+
         self._update_pieces()
         self.update_labels()
+        self.update_captured_pieces()
 
         if self.blackButton.isChecked():
             self.blackButtonClicked()
@@ -808,7 +1060,7 @@ class BoardVis(QMainWindow):
 
         if self.blackButton.isChecked() and not self.AivAiButton.isChecked():
             self.make_AI_move()
-           
+
         if self.AivAiButton.isChecked():
             self.controller.tracker.current_player = 1
             self.ai_1 = AIFunctions(self.controller, 1)
@@ -820,6 +1072,7 @@ class BoardVis(QMainWindow):
             self.timer3.setSingleShot(False)
             self.timer3.setInterval(300)
             self.timer3.timeout.connect(lambda: self.AIvAI())
+            global lock_input
             lock_input = True
             self.timer3.start()
 
@@ -833,7 +1086,6 @@ class BoardVis(QMainWindow):
         font.setFamily('Arial')
         font.setPixelSize(self.rollText.height() * 0.4)
         self.rollText.setFont(font)
-        self.rollText.setStyleSheet('font-weight: bold; color: rgb(0, 204, 204)')
         self.rollText.move(int((self.boardSize / 2) - (self.rollText.width() / 2)) + moveIntoSidePanel,
                            int((self.boardSize / 2) - 300))
         self.rollText.hide()
@@ -865,7 +1117,6 @@ class BoardVis(QMainWindow):
         font.setFamily('Arial')
         font.setPixelSize(self.resultCaptureText.height() * 0.4)
         self.resultCaptureText.setFont(font)
-        self.resultCaptureText.setStyleSheet('font-weight: bold; color: rgb(0, 204, 204)')
         self.resultCaptureText.move(int((self.boardSize / 2) - (self.rollText.width() / 2)) + moveIntoSidePanel,
                            int((self.boardSize / 2) - 300))
 
@@ -875,7 +1126,7 @@ class BoardVis(QMainWindow):
         self.rollDiceAnimation.move(300 + moveIntoSidePanel, 200)
         # update when after roll
         self.resultCaptureText.clear()
-        if self.controller.game_status() == True:
+        if self.controller.is_game_over():
             self.resultCaptureText.setText("Capture Successful! \n Game Over!!")
             global game_over
             game_over = True
@@ -893,9 +1144,10 @@ class BoardVis(QMainWindow):
         #clear attack var
         self.attackSuccess = None
 
-
     def okayButtonClicked(self):
         self.hidepauseBackground()
+        self.update_captured_pieces()
+        self.make_AI_move() #TODO: find place for this after update pieces is fixed
 
     def __set_button(self, button: QPushButton, scale):
         font = QFont()
@@ -925,13 +1177,13 @@ class BoardVis(QMainWindow):
         self.tableOption.setText("Current Player: " + ("White" if self.controller.tracker.get_current_player() else "Black"))
         self.moveIndicator.setText("Remaining Moves: " + str(self.controller.tracker.get_number_of_available_moves() ))
 
-
-
     def showSideChoice(self):
         self.startScreen.show()
         self.startScreen.raise_()
-        self.chooseSideText.show()
-        self.chooseSideText.raise_()
+        self.welcomeText.show()
+        self.welcomeText.raise_()
+        self.options.show()
+        self.options.raise_()
 
         self.optionScreen.show()
         self.optionScreen.raise_()
@@ -963,12 +1215,13 @@ class BoardVis(QMainWindow):
         self.medievalButton.raise_()
         self.corpCommanderButton.raise_()
 
-        self.startGame.show()
-        self.startGame.raise_()
+        self.startGameButton.show()
+        self.startGameButton.raise_()
 
     def hideStartScreen(self):
         self.startScreen.hide()
-        self.chooseSideText.hide()
+        self.welcomeText.hide()
+        self.options.hide()
         self.whiteButton.hide()
         self.blackButton.hide()
         self.teamText.hide()
@@ -983,7 +1236,7 @@ class BoardVis(QMainWindow):
         self.corpCommanderButton.hide()
         self.highlightText.hide()
         self.gameTypeText.hide()
-        self.startGame.hide()
+        self.startGameButton.hide()
 
     def returnToStartScreen(self):
         global game_over
@@ -998,12 +1251,10 @@ class BoardVis(QMainWindow):
         self.remove_all_h()
         self.reset_movement_data()
 
-
     def whiteButtonClicked(self):
         self.controller.tracker.current_player = 1
         #self.player = 0
         self.hideStartScreen()
-
 
     def blackButtonClicked(self):
         self.controller.tracker.current_player = 1
@@ -1031,39 +1282,53 @@ class BoardVis(QMainWindow):
         self.okayButton.hide()
 
     def set_non_playables(self):
-        label = self.mk_basic_label("yt")
-        label.move(0, 0)
-        self.set_emptys("wt", "bt", "gt", "ot")
-        self.set_lets_and_nums()
+        light, dark, border = self.theme['board']
+        if self.corner_tile:
+            self.corner_tile.setPixmap(QPixmap('./picture/' + border))
+        else:
+            self.corner_tile = self.mk_basic_label(border)
+            self.corner_tile.move(0, 0)
+        self.set_emptys(light, dark, "gt", "ot")
+        self.set_lets_and_nums(border)
 
-    def set_lets_and_nums(self):
+    def set_lets_and_nums(self, border_bg:str=""):
         letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
         nums = ["8", "7", "6", "5", "4", "3", "2", "1"]
+        if not len(self.border):
+            self.border.append([])
+            self.border.append([])
+            if not self.white_pov:
+                letters.reverse()
+                nums.reverse()
+            for i, (ltr, num) in enumerate(zip(letters, nums)):
+                l1 = self.mk_basic_label(border_bg+ltr)
+                l2 = self.mk_basic_label(border_bg+num)
+                l1.move(int( (i + 1) * self.tileSize), 0)
+                l2.move(0, int( (i + 1) * self.tileSize))
+                l1.show()
+                l2.show()
+                self.border[0].append(l1)
+                self.border[1].append(l2)
+        else:
+            for i, (ltr, num) in enumerate(zip(letters, nums)):
+                self.border[0][i].setPixmap(QPixmap('./picture/' + border_bg+ltr))
+                self.border[1][i].setPixmap(QPixmap('./picture/' + border_bg+num))
 
-        if not self.white_pov:
-            letters.reverse()
-            nums.reverse()
-        combo = [(letters[i], nums[i]) for i in range(8)]
-        for i in range(8):
-            name1, name2 = combo[i]
-            l1 = self.mk_basic_label(name1)
-            l2 = self.mk_basic_label(name2)
-            l1.move(int( (i + 1) * self.tileSize), 0)
-            l2.move(0, int( (i + 1) * self.tileSize))
-            l1.show()
-            l2.show()
 
     def set_emptys(self, white, black, move_h, atk_h):
         is_white = True
         for j in range(8):
             for i in range(8):
                 name = white if is_white else black
-                label = TileVis(name,  move_h, atk_h, parent=self)
-                label.setPixmap(QPixmap('./picture/' + name))
-                label.resize(75, 75)
-                label.setScaledContents(True)
-                label.move(int((i+1) * self.tileSize), int((j+1) * self.tileSize))
-                self.tilePos[j][i] = label
+                if self.tilePos[j][i] == "0":
+                    label = TileVis(name,  move_h, atk_h, parent=self)
+                    label.setPixmap(QPixmap('./picture/' + name))
+                    label.resize(75, 75)
+                    label.setScaledContents(True)
+                    label.move(int((i+1) * self.tileSize), int((j+1) * self.tileSize))
+                    self.tilePos[j][i] = label
+                else:
+                    self.tilePos[j][i].set_default_vis(QPixmap('./picture/' + name))
                 is_white = not is_white
             is_white = not is_white
 
@@ -1090,7 +1355,8 @@ class BoardVis(QMainWindow):
                 piece = piece_to_img_name(piece)
                 if not piece:
                     continue
-                label = PieceVis(piece + color_name, x, y, parent=self)
+                piece_color = 'white' if piece[0]=='w' else 'black'
+                label = PieceVis(piece + color_name, x, y, color=piece_color, parent=self)
                     # Set the image based on the array element.
                 label.resize(75, 75)
                 label.setScaledContents(True)
@@ -1189,7 +1455,6 @@ class Deleg_Label(QWidget):
         else:
             self.piece_opt.addItems(self.corp_data[self.get_king_corp()])
 
-
 class LeaderBox(QWidget):
     def __init__(self, leader, corp):
 
@@ -1219,8 +1484,6 @@ class LeaderBox(QWidget):
         color = corp_to_color(corp)
         leader_img = piece_to_img_name(self.leader)
         return corpVis(leader_img + color, self.leader, size)
-
-
 
 class KingBox(LeaderBox):
     def __init__(self, leader, corp, corps):
@@ -1321,3 +1584,53 @@ class CorpMenu(QWidget):
         current_group = self.col_layouts[i-1].itemAt(self.col_layouts[i-1].count() - 1).widget()
         self.col_layouts[i-1].replaceWidget(current_group, new_piece_group)
         current_group.setParent(None)
+
+class ThemeField(QWidget):
+    def __init__(self, name, img_name):
+        super(ThemeField,self).__init__()
+        self.theme_name = name
+        self.select_button = QPushButton('', self)
+        self.theme_preview = QLabel()
+        image = QPixmap('./picture/'+ img_name)
+        icon  = QIcon(image)
+        self.select_button.setIcon(icon)
+        self.select_button.setFixedSize(300,150)
+        self.select_button.setIconSize(QSize(300,300))
+        theme_pair = QHBoxLayout()
+        theme_pair.addWidget(self.select_button)
+        self.setLayout(theme_pair)
+
+    def set_click_func(self, func):
+        self.select_button.clicked.connect(lambda:  func(self.theme_name))
+
+    def get_theme(self):
+        return self.theme_name
+
+class ThemeMenu(QWidget):
+    def __init__(self, x_size, y_size, main_window):
+        super(ThemeMenu, self).__init__()
+        self.setWindowTitle("Theme Menu")
+        self.hide()
+        self.main_window = main_window
+        self.theme = 'default'
+        themes_layout = QVBoxLayout()
+        themes_layout.addWidget( self.add_theme('default', 'defaultPreview') )
+        themes_layout.addWidget( self.add_theme('wood', 'woodPreview') )
+        themes_layout.addWidget( self.add_theme('marble', 'marblePreview') )
+        themes_layout.addStretch(5)
+        themes_layout.setSpacing(0)
+        self.setLayout(themes_layout)
+
+
+
+    def get_theme(self) -> String:
+        return self.theme
+
+    def set_theme(self, name):
+        self.main_window.set_theme(name)
+
+
+    def add_theme(self, name, img):
+        theme = ThemeField(name, img)
+        theme.set_click_func(self.set_theme)
+        return theme
