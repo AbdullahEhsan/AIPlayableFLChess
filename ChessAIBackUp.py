@@ -135,42 +135,42 @@ class AIFunctions:
 
         if piece.get_type() == 'Pawn':
             if type == 'Pawn':
-                return 3
+                return 6
             elif type == 'Bishop':
-                return 2
+                return 4
             else:
-                return 1
+                return 2
         elif piece.get_type() == 'Rook':
             if type == 'Pawn' or type == 'Bishop' or type == 'Rook':
-                return 2
+                return 4
             else:
-                return 3
+                return 6
         elif piece.get_type() == 'Bishop':
             if type == 'Pawn':
-                return 4
+                return 8
             if type == 'Bishop':
-                return 3
-            else:
-                return 2
-        elif piece.get_type() == 'Knight':
-            if type == 'Pawn':
-                return 5
-            else:
-                return 2
-        elif piece.get_type() == 'Queen':
-            if type == 'Rook':
-                return 2
-            if type == 'Pawn':
-                return 5
-            else:
-                return 3
-        elif piece.get_type() == 'King':
-            if type == 'Rook':
-                return 2
-            if type == 'Pawn':
                 return 6
             else:
-                return 3
+                return 4
+        elif piece.get_type() == 'Knight':
+            if type == 'Pawn':
+                return 10
+            else:
+                return 4
+        elif piece.get_type() == 'Queen':
+            if type == 'Rook':
+                return 4
+            if type == 'Pawn':
+                return 10
+            else:
+                return 6
+        elif piece.get_type() == 'King':
+            if type == 'Rook':
+                return 4
+            if type == 'Pawn':
+                return 12
+            else:
+                return 6
 
     def genHostileMap(self):
         x = 0
@@ -603,8 +603,12 @@ aiAssistWhite = AIFunctions(game, True)
 aiAssistBlack = AIFunctions(game, False)
 
 
-for num in range (44):
-    if game.tracker.get_current_player():
-        aiAssistWhite.make_move()
-    else:
-        aiAssistBlack.make_move()
+# for num in range (100):
+#    if not game.is_game_over():
+#        if game.tracker.get_current_player():
+#            aiAssistWhite.make_move()
+#        else:
+#            aiAssistBlack.make_move()
+#    else:
+#        print("Game Over!")
+#        break
