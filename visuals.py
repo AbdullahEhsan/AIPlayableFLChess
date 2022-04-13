@@ -1115,6 +1115,8 @@ class BoardVis(QMainWindow):
         self._update_pieces()
 
     def endTurnClicked(self):
+        if self.AivAiButton.isChecked():
+            return
         self.controller.tracker.end_turn()
         self.remove_all_h()
         self.update_labels()
