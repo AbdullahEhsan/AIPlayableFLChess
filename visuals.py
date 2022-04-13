@@ -1,5 +1,4 @@
 from math import floor
-from tokenize import String
 from typing import Tuple
 from xmlrpc.client import Boolean
 from PyQt5.QtCore import Qt, QPoint, QSize, QTimer
@@ -12,6 +11,7 @@ from ChessGame import Game as chess_game
 
 game_over = False
 ai_turn = False
+
 def corp_to_color(corp_num):
     colors = ['', 'rd', 'bl', 'gr']
     return colors[corp_num]
@@ -280,8 +280,6 @@ class BoardVis(QMainWindow):
         self.setWindowTitle("Chess Board")
         self.highlighted = []
         self.corp_menu = CorpMenu(self)
-        self.ai_move_delay = QTimer(self)
-        self.ai_move_delay.timeout.connect(self.ai_single_move)
 
         self.theme_menu = ThemeMenu(400,400, self)
         self.corner_tile = None
@@ -298,10 +296,10 @@ class BoardVis(QMainWindow):
         self.options.clicked.connect(self.theme_menu.show)
 
         # This button allow you can stop your turn
-        self.stopButton = QPushButton("End Turn", self)
+        self.endTurnButton = QPushButton("End Turn", self)
 
         # This button allow you can reset the game when you want to start new game
-        self.newGameButton = QPushButton("Restart", self)
+        self.restartButton = QPushButton("Restart", self)
 
         # choose highlight mode on/off
         self.corpButton = QPushButton("Manage Corps", self)
@@ -346,6 +344,7 @@ class BoardVis(QMainWindow):
         self.blackButton = QRadioButton("Black side", self)
         self.humanButton = QRadioButton("Human", self)
         self.computerButton = QRadioButton("Computer", self)
+        self.AivAiButton = QRadioButton("Ai v Ai", self)
         self.offhighlight = QRadioButton("Off", self)
         self.onhighlight = QRadioButton("On", self)
         self.medievalButton = QRadioButton("Medieval", self)
@@ -360,9 +359,14 @@ class BoardVis(QMainWindow):
         self.attackSuccess = None
         self.diceRollResult = -1
 
-        self.ai_player = None
         self.sbs_delay_ms = 400
+
+        self.ai_player = None
+        self.ai_v_ai_players = []
+
+        self.ai_move_delay = QTimer(self)
         self.ai_move_delay_ms = 1000
+        self.ai_move_delay.timeout.connect(self.ai_single_move)
 
         self.theme = None
 
@@ -574,7 +578,7 @@ class BoardVis(QMainWindow):
         self.corpButton.setCheckable(True)
         self.corpButton.clicked.connect(self.corpBClicked)
         self.corpButton.resize(180,40)
-        self.corpButton.move(int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2)) - 50,
+        self.corpButton.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 50,
                              25)
 
         self.wCapturedText = QLabel(self)
@@ -592,7 +596,7 @@ class BoardVis(QMainWindow):
         font.setFamily("Baskerville")
         font.setPixelSize(self.moveIndicator.height() * 0.6)
         self.wCapturedText.setFont(font)
-        self.wCapturedText.move(int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2)) - 60,
+        self.wCapturedText.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 60,
                              390)
 
         #set frame for wCapturedPic:
@@ -612,7 +616,7 @@ class BoardVis(QMainWindow):
         font.setPixelSize(self.moveIndicator.height() * 0.6)
         self.bCapturedText.setFont(font)
         self.bCapturedText.move(
-            int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2)) - 60,
+            int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 60,
             95)
 
         # set frame for bCapturedPic:
@@ -626,23 +630,23 @@ class BoardVis(QMainWindow):
             self.corpButton.hide()
 
     #Create stop button properties
-        self.__set_button(self.stopButton, 0.7)
-        self.stopButton.clicked.connect(self.stopButtonClicked)
-        self.stopButton.move(int(self.boardSize - ((self.stopButton.width() - self.tableOption.width()) / 2))-50,
-                              int(self.boardSize / 2 + 250) - (self.stopButton.height() * 0.5)-20)
+        self.__set_button(self.endTurnButton, 0.7)
+        self.endTurnButton.clicked.connect(self.endTurnClicked)
+        self.endTurnButton.move(int(self.boardSize - ((self.endTurnButton.width() - self.tableOption.width()) / 2))-50,
+                              int(self.boardSize / 2 + 250) - (self.endTurnButton.height() * 0.5)-20)
 
-        self.stopButton.resize(180,40)
-        self.stopButton.hide()
+        self.endTurnButton.resize(180,40)
+        self.endTurnButton.hide()
 
     #Create restart button properties
 
-        self.__set_button(self.newGameButton, 0.7)
-        self.newGameButton.move(int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2))-50,
-                             int(self.boardSize / 2 + 300) - (self.newGameButton.height() * 0.5)-20)
+        self.__set_button(self.restartButton, 0.7)
+        self.restartButton.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2))-50,
+                             int(self.boardSize / 2 + 300) - (self.restartButton.height() * 0.5)-20)
 
-        self.newGameButton.resize(180,40)
-        self.newGameButton.clicked.connect(self.returnToStartScreen)
-        self.newGameButton.hide()
+        self.restartButton.resize(180,40)
+        self.restartButton.clicked.connect(self.returnToStartScreen)
+        self.restartButton.hide()
 
         # Create StartScreen properties
         self.startScreen.setAlignment(Qt.AlignCenter)
@@ -728,6 +732,8 @@ class BoardVis(QMainWindow):
                                int((self.boardSize / 2) - 95))
         self.opponentText.hide()
 
+
+
         #set up highlight text properties
         self.highlightText.setAlignment(Qt.AlignCenter)
         self.highlightText.setText("Highlight: ")
@@ -793,6 +799,15 @@ class BoardVis(QMainWindow):
         self.computerButton.setStyleSheet(radioButtonTextCSS)
         self.humanButton.adjustSize()
         self.computerButton.adjustSize()
+
+
+        self.opponent_group.addButton(self.AivAiButton, 3)
+        self.__set_button(self.AivAiButton, 0.4)
+        self.AivAiButton.move(int((self.boardSize / 2) - (self.blackButton.width() / 2) - 100) + moveIntoSidePanel
+                              , int((self.boardSize / 2) - 10))
+
+        self.AivAiButton.setStyleSheet(radioButtonTextCSS)
+        self.AivAiButton.adjustSize()
 
         #set up highlight on/off button properties
         self.highlight_group = QButtonGroup(self)
@@ -868,7 +883,7 @@ class BoardVis(QMainWindow):
             captured_pc.setPixmap(cap)
             captured_pc.resize(img_size, img_size)
             captured_pc.move(
-                int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2)) - 10 + (img_size*(i%5)),
+                int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 10 + (img_size*(i%5)),
                     starting + (offset*int(i/5))
             )
             self.captured_by[color].append(captured_pc)
@@ -887,9 +902,18 @@ class BoardVis(QMainWindow):
     def make_AI_move(self):
         global ai_turn
         ai_turn = True
-        if not self.computerButton.isChecked() or self.ai_turn_over():
-            ai_turn = False
-            return      # ai not selected, bail out of function
+        if game_over:
+            return
+        if self.AivAiButton.isChecked():
+            if self.controller.is_game_over():
+                ai_turn = False
+                self.handle_gameover()
+                return
+            self.ai_player = self.ai_v_ai_players[self.controller.tracker.current_player]
+        else:
+            if not self.computerButton.isChecked() or self.ai_turn_over():
+                ai_turn = False
+                return      # ai not selected, bail out of function
         self.ai_move_delay.start(self.ai_move_delay_ms)
 
     def ai_single_move(self):
@@ -917,6 +941,8 @@ class BoardVis(QMainWindow):
             new_spot = board_to_screen(from_x, from_y, self.tileSize)
 
         def updates():
+            if game_over:
+                return
             self._update_pieces()
             self.update_labels()
             self.update_captured_pieces()
@@ -925,20 +951,19 @@ class BoardVis(QMainWindow):
         if len(new_spots)>1:
             new_spots.reverse()
 
-            ai_sbs_delay = QTimer(self)
+            sbs_delay = QTimer(self)
 
             def ai_spot_by_spot():
                 if len(new_spots)==0:
-                    ai_sbs_delay.stop()
+                    sbs_delay.stop()
                     updates()
                     return
                 x, y = new_spots.pop()
                 print(x,y)
-                ai_mv
                 ai_mv_piece.move(x, y)
 
-            ai_sbs_delay.timeout.connect(ai_spot_by_spot)
-            ai_sbs_delay.start(self.sbs_delay_ms)
+            sbs_delay.timeout.connect(ai_spot_by_spot)
+            sbs_delay.start(self.sbs_delay_ms)
         else:
             updates()
 
@@ -949,10 +974,11 @@ class BoardVis(QMainWindow):
             return True
         return self.whiteButton.isChecked() == whites_turn    # the active color is the color the human chose, no longer computer's turn
 
+
     def handle_gameover(self):
         global game_over
         game_over = True
-        self.stopButton.hide()
+        self.endTurnButton.hide()
         self.moveIndicator.hide()
         self.tableOption.setText("Winner: " +
                                 ("White" if self.controller.tracker.get_current_player() else "Black") +
@@ -960,6 +986,9 @@ class BoardVis(QMainWindow):
         return
 
     def startGameClicked(self):
+        global game_over
+        game_over = False
+
         self.theme_menu.close()
         if self.medievalButton.isChecked():
             self.__game_type = "Medieval"
@@ -998,10 +1027,17 @@ class BoardVis(QMainWindow):
         self.hideStartScreen()
         self.tableOption.show()
         self.moveIndicator.show()
-        self.newGameButton.show()
-        self.stopButton.show()
+        self.restartButton.show()
+        self.endTurnButton.show()
 
-        if self.blackButton.isChecked():
+        if self.blackButton.isChecked() and not self.AivAiButton.isChecked():
+            self.make_AI_move()
+
+        if self.AivAiButton.isChecked():
+            self.controller.tracker.current_player = 1
+            ai_1 = AIFunctions(self.controller, 1)
+            ai_2 = AIFunctions(self.controller, 0)
+            self.ai_v_ai_players = [ai_2, ai_1]
             self.make_AI_move()
 
     def __rolldiceWork(self):
@@ -1058,7 +1094,7 @@ class BoardVis(QMainWindow):
             self.resultCaptureText.setText("Capture Successful! \n Game Over!!")
             global game_over
             game_over = True
-            self.stopButton.hide()
+            self.endTurnButton.hide()
             self.moveIndicator.hide()
             self.tableOption.setText("Winner: " +
                                     ("White" if self.controller.tracker.get_current_player() else "Black") +
@@ -1088,8 +1124,12 @@ class BoardVis(QMainWindow):
         self.set_non_playables()
         self._update_pieces()
 
-    def stopButtonClicked(self):
+    def endTurnClicked(self):
+        if self.AivAiButton.isChecked():
+            return
         self.controller.tracker.end_turn()
+        self.ai_move_delay.stop()
+        self._update_pieces()
         self.remove_all_h()
         self.update_labels()
         self.reset_movement_data()
@@ -1132,6 +1172,8 @@ class BoardVis(QMainWindow):
         self.computerButton.raise_()
         self.humanButton.show()
         self.humanButton.raise_()
+        self.AivAiButton.show()
+        self.AivAiButton.raise_()
         self.offhighlight.show()
         self.offhighlight.raise_()
         self.onhighlight.show()
@@ -1155,6 +1197,7 @@ class BoardVis(QMainWindow):
         self.opponentText.hide()
         self.computerButton.hide()
         self.humanButton.hide()
+        self.AivAiButton.hide()
         self.offhighlight.hide()
         self.onhighlight.hide()
         self.medievalButton.hide()
@@ -1164,10 +1207,11 @@ class BoardVis(QMainWindow):
         self.startGameButton.hide()
 
     def returnToStartScreen(self):
+        self.ai_move_delay.stop()
         global game_over
-        game_over = False
-        self.newGameButton.hide()
-        self.stopButton.hide()
+        game_over = True
+        self.restartButton.hide()
+        self.endTurnButton.hide()
         self.moveIndicator.hide()
         self.tableOption.hide()
         self.corpButton.hide()
@@ -1238,7 +1282,6 @@ class BoardVis(QMainWindow):
             for i, (ltr, num) in enumerate(zip(letters, nums)):
                 self.border[0][i].setPixmap(QPixmap('./picture/' + border_bg+ltr))
                 self.border[1][i].setPixmap(QPixmap('./picture/' + border_bg+num))
-
 
     def set_emptys(self, white, black, move_h, atk_h):
         is_white = True
@@ -1546,9 +1589,7 @@ class ThemeMenu(QWidget):
         themes_layout.setSpacing(0)
         self.setLayout(themes_layout)
 
-
-
-    def get_theme(self) -> String:
+    def get_theme(self) -> str:
         return self.theme
 
     def set_theme(self, name):
