@@ -1229,6 +1229,8 @@ class BoardVis(QMainWindow):
         self.ai_move_delay.stop()
         global game_over
         game_over = True
+        global ai_turn
+        ai_turn = False
         self.restartButton.hide()
         self.endTurnButton.hide()
         self.moveIndicator.hide()
