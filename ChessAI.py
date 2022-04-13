@@ -3,7 +3,7 @@ import random
 from ChessGame import Game
 
 
-#game = Game()
+game = Game()
 
 class AIFunctions:
     def __init__(self, game: Game, color):
@@ -13,7 +13,18 @@ class AIFunctions:
         self.total_success_moves = 0
         self.total_moves_attempted = 0
         self.last_turn = 0
+        self.kingmod = 1
         self.hostilemap = \
+            [[0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0]]
+
+        self.kingOrderGrid = \
             [[0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -25,6 +36,34 @@ class AIFunctions:
 
     def updateBoard(self):
         self.board = self.game._get_board()
+
+    def __get_position_of_piece(self, piece_name: str):
+        if len(piece_name) == 0 or piece_name[0] not in ('w', 'b'):
+            print('empty or not w or not b')
+            return (-1, -1)
+
+        some_pieces = {
+            'Kt': ["1", "2"],
+            'R': ["1", "2"],
+            'B': ["1", "2"],
+            'P': ["1", "2", "3", "4", "5", "6", "7", "8"]
+        }
+
+        if "Kg" in piece_name or "Q" in piece_name:
+            if len(piece_name) != 3:
+                print('invalid royalty piece name')
+                return (-1, -1)
+        elif not (piece_name[1:-1] in some_pieces and piece_name[-1] in some_pieces[piece_name[1:-1]]):
+            print('invalid non royalty piece name')
+            return (-1, -1)
+
+        for y, row in enumerate(self.game.get_board()):
+            for x, spot in enumerate(row):
+                pc, corp = spot
+                if pc == piece_name:
+                    return (x, y)
+        print('piece not on board')
+        return (-1, -1)
 
     def corpBalance(self):
         lcore = 0
@@ -77,36 +116,58 @@ class AIFunctions:
         elif piece.get_type() == 'Queen':
             return 4
 
-    def __get_position_of_piece(self, piece_name: str):
-        if len(piece_name) == 0 or piece_name[0] not in ('w', 'b'):
-            print('empty or not w or not b')
-            return (-1, -1)
+    #feed x,y of moved king corp piece for orders
+    def kingOrders(self, x, y):
+        self.resetKingOrders()
 
-        some_pieces = {
-            'Kt': ["1", "2"],
-            'R': ["1", "2"],
-            'B': ["1", "2"],
-            'P': ["1", "2", "3", "4", "5", "6", "7", "8"]
-        }
+        #determine piece advantage
+        white = 0
+        black = 0
 
-        if "Kg" in piece_name or "Q" in piece_name:
-            if len(piece_name) != 3:
-                print('invalid royalty piece name')
-                return (-1, -1)
-        elif not (piece_name[1:-1] in some_pieces and piece_name[-1] in some_pieces[piece_name[1:-1]]):
-            print('invalid non royalty piece name')
-            return (-1, -1)
+        for item in self.board:
+            for item2 in item:
+                if item2.piece:
+                    if item2.piece.is_white():
+                        white = white+1
+                    else:
+                        black = black+1
 
-        for y, row in enumerate(self.game.get_board()):
-            for x, spot in enumerate(row):
-                pc, corp = spot
-                if pc == piece_name:
-                    return (x, y)
-        print('piece not on board')
-        return (-1, -1)
+        korder = True
+        if(white > black and self.color == True or black > white and self.color == False):
+            korder = False
+
+        #if the AI does not have piece advantage, make more defensive moves
+        if(korder):
+            list = self.game.get_possible_moves_for_piece_at(x = y, y = x, ai_backdoor=True)
+            for l,m,p in list:
+                #sets spot values near the moved king piece to be higher
+                #also increases the danger of hostile pieces to encourage shorter moves.
+                if(l - x == 1 or x - l == 1 and m - y == 1 or y - m == 1):
+                    self.kingOrderGrid[m][l] = 2
+                    self.kingmod = 3
+        #else the AI has piece advantage, make more aggressive moves
+        else:
+            #applies to the hostilemap, reducing the impact of dangerous spots,
+            #therefore permitting more aggressive movement
+            self.kingmod = .2
+            self.genHostileMap()
+
+    def resetKingOrders(self):
+        self.kingmod = 1
+        self.kingOrderGrid = \
+            [[0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0]]
 
     # weights attack areas based on friendly piece power
     def attackRef(self, x, y, piece):
+        a = 0
+        b = 0
         defpiece = None
         for item in self.board:
             for item2 in item:
@@ -116,7 +177,8 @@ class AIFunctions:
                 a = a + 1
             b = b + 1
             a = 0
-        #case needs to be handled where defpiece isn't assigned or determine why it isn't
+
+        # TODO: case needs to be handled where defpiece isn't assigned or determine why it isn't
         if defpiece:
             type = defpiece.get_type()
         else:
@@ -124,42 +186,42 @@ class AIFunctions:
 
         if piece.get_type() == 'Pawn':
             if type == 'Pawn':
-                return 3
+                return 6
             elif type == 'Bishop':
-                return 2
+                return 4
             else:
-                return 1
+                return 2
         elif piece.get_type() == 'Rook':
             if type == 'Pawn' or type == 'Bishop' or type == 'Rook':
-                return 2
+                return 4
             else:
-                return 3
+                return 6
         elif piece.get_type() == 'Bishop':
             if type == 'Pawn':
-                return 4
+                return 8
             if type == 'Bishop':
-                return 3
-            else:
-                return 2
-        elif piece.get_type() == 'Knight':
-            if type == 'Pawn':
-                return 5
-            else:
-                return 2
-        elif piece.get_type() == 'Queen':
-            if type == 'Rook':
-                return 2
-            if type == 'Pawn':
-                return 5
-            else:
-                return 3
-        elif piece.get_type() == 'King':
-            if type == 'Rook':
-                return 2
-            if type == 'Pawn':
                 return 6
             else:
-                return 3
+                return 4
+        elif piece.get_type() == 'Knight':
+            if type == 'Pawn':
+                return 10
+            else:
+                return 4
+        elif piece.get_type() == 'Queen':
+            if type == 'Rook':
+                return 4
+            if type == 'Pawn':
+                return 10
+            else:
+                return 6
+        elif piece.get_type() == 'King':
+            if type == 'Rook':
+                return 4
+            if type == 'Pawn':
+                return 12
+            else:
+                return 6
 
     def genHostileMap(self):
         x = 0
@@ -189,6 +251,10 @@ class AIFunctions:
                         else:
                             spotVal = .4
                         for a, b, c in moveList:
+                            if (a - x == 1 or x - a == 1 and b - y == 1 or b - a == 1):
+                                self.hostilemap[b][a] += spotVal * self.kingmod
+                            elif(item2.piece.get_type() == 'Rook' or item2.piece.get_type() == 'Knight'):
+                                self.hostilemap[b][a] += spotVal * self.kingmod
                             self.hostilemap[b][a] += spotVal
 
                             found = False
@@ -257,34 +323,35 @@ class AIFunctions:
                                 heatmap[m][l] += 1
                                 if player == "white":
                                     if (m - x == 2 or x - m == 2 or y - l == 2):
-                                        heatmap[m][l] += 2
+                                        heatmap[m][l] += 1
                                 if player == "black":
                                     if (m - x == 2 or x - m == 2 or l - y == 2):
-                                        heatmap[m][l] += 2
+                                        heatmap[m][l] += 1
                             elif (m - x == 3 or x - m == 3 or y - l == 3 or l - y == 3):
                                 heatmap[m][l] += 2
                                 if player == "white":
                                     if (m - x == 3 or x - m == 3 or y - l == 3):
-                                        heatmap[m][l] += 3
+                                        heatmap[m][l] += 1
                                 if player == "black":
                                     if (m - x == 3 or x - m == 3 or l - y == 3):
-                                        heatmap[m][l] += 3
+                                        heatmap[m][l] += 1
                             elif (m - x == 4 or x - m == 4 or y - l == 4 or l - y == 4):
-                                heatmap[m][l] += 3
+                                heatmap[m][l] += 2
                                 if player == "white":
                                     if (m - x == 4 or x - m == 4 or y - l == 4):
-                                        heatmap[m][l] += 4
+                                        heatmap[m][l] += 1
                                 if player == "black":
                                     if (m - x == 2 or x - m == 2 or l - y == 2):
-                                        heatmap[m][l] += 4
+                                        heatmap[m][l] += 1
                             elif (m - x == 5 or x - m == 5 or y - l == 5 or l - y == 5):
                                 heatmap[m][l] += 3
                                 if player == "white":
                                     if (m - x == 5 or x - m == 5 or y - l == 5):
-                                        heatmap[m][l] += 4
+                                        heatmap[m][l] += 1
                                 if player == "black":
                                     if (m - x == 5 or x - m == 5 or l - y == 5):
-                                        heatmap[m][l] += 4
+                                        heatmap[m][l] += 1
+                            heatmap[m][l] += spotVal - self.hostilemap[m][l] + self.kingOrderGrid[m][l]
                             if item2.piece.get_type() != 'King':
                                 hosval = self.hostilemap[m][l] % 1000
                             else:
@@ -582,3 +649,17 @@ class AIFunctions:
             print(colour, "team had", self.total_success_moves, 'successful moves out of', self.total_moves_attempted,
                   'this turn')
 
+
+aiAssistWhite = AIFunctions(game, True)
+aiAssistBlack = AIFunctions(game, False)
+
+
+for num in range (100):
+   if not game.is_game_over():
+       if game.tracker.get_current_player():
+           aiAssistWhite.make_move()
+       else:
+           aiAssistBlack.make_move()
+   else:
+       print("Game Over!")
+       break
