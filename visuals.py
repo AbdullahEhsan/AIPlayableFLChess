@@ -927,8 +927,12 @@ class BoardVis(QMainWindow):
         if type(ai_mv_piece).__name__ != 'PieceVis':
             return
 
+        isAttack = (to_x, to_y, True) in self.controller.get_possible_moves_for_piece_at(x=from_x, y=from_y)
+
         moveSuccessful = self.controller.move_piece(from_x=from_x, from_y=from_y,
                                                     to_x=to_x, to_y=to_y)
+        self.diceRollResult = self.controller.get_result_of_dice_roll()
+
         if moveSuccessful:
             new_spots = []
             for x, y in self.controller.get_move_path():
@@ -946,7 +950,11 @@ class BoardVis(QMainWindow):
             self._update_pieces()
             self.update_labels()
             self.update_captured_pieces()
-            self.make_AI_move()
+            if isAttack:
+                self.rollDiceScreen(moveSuccessful)
+            else:
+                self.make_AI_move()
+
 
         if len(new_spots)>1:
             new_spots.reverse()
@@ -1009,6 +1017,9 @@ class BoardVis(QMainWindow):
             self.blackButtonClicked()
         elif self.whiteButton.isChecked():
             self.whiteButtonClicked()
+
+        self.ai_player = None
+        self.ai_v_ai_players = []
 
         if self.computerButton.isChecked():
             self.ai_player = AIFunctions(self.controller, self.blackButton.isChecked())
@@ -1102,8 +1113,16 @@ class BoardVis(QMainWindow):
         else:
             self.resultCaptureText.setText("Capture " + ("Successful!" if self.attackSuccess else "Failed!"))
 
-        self.okayButton.show()
-        self.okayButton.raise_()
+        if ai_turn:
+            okayTimer = QTimer(self)
+            okayTimer.setSingleShot(True)
+            okayTimer.setInterval(2000)
+            okayTimer.timeout.connect(self.okayButtonClicked)
+            okayTimer.start()
+        else:
+            self.okayButton.show()
+            self.okayButton.raise_()
+
 
         #clear attack var
         self.attackSuccess = None
