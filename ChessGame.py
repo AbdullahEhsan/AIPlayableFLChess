@@ -378,7 +378,7 @@ class Game:
             if (abs(to_x - from_x) > 1 or abs(to_y - from_y) > 1) and self.__board[to_y][to_x].piece is not None:
                 return False
             if ((abs(to_x - from_x) == 2 or abs(to_y - from_y) == 2) and
-                not self.__is_clear_path(from_x, from_y, to_x, to_y)):
+                not self.__get_small_path(from_x, from_y, to_x, to_y)):
                 self.__move_message += f"No clear path to ({str(to_x)}, {str(to_y)}). "
                 return False
             else:
@@ -413,12 +413,20 @@ class Game:
                         abs(to_y - from_y) > self.__VALID_MOVE_DICT[piece_type]):
                     self.__move_message += "Chosen move is too far away. "
                     return False
-                elif not self.__is_clear_path(from_x, from_y, to_x, to_y):
+                elif not self.__get_small_path(from_x, from_y, to_x, to_y):
                     self.__move_message += f"No clear path to ({str(to_x)}, {str(to_y)}). "
                     return False
-
+        
         return True
 
+    
+    def __get_small_path(self, from_x: int, from_y: int, to_x: int, to_y: int):
+        self.__move_list = []
+        self.__move_path = []
+        self.bfs(from_x=from_x, from_y=from_y, to_x=to_x, to_y=to_y)
+        return self.__is_clear_path(from_x=from_x, from_y=from_y, to_x=to_x, to_y=to_y)
+    
+    
     def __is_clear_path(self, from_x: int, from_y: int, to_x: int, to_y: int):
         current_piece = self.__board[from_y][from_x].piece
         target = self.__board[to_y][to_x]
@@ -443,17 +451,17 @@ class Game:
             y_steps = [-1, 0, 1]
 
             if x_range == 0 and y_range > 0:
-                x_steps = [-1, 0, 1]
+                x_steps = [0, 1, -1]
                 y_steps = [0, 1, -1]
             elif x_range == 0 and y_range < 0:
-                x_steps = [-1, 0, 1]
+                x_steps = [0, 1, -1]
                 y_steps = [0, -1, 1]
             elif x_range > 0 and y_range == 0:
                 x_steps = [0, 1, -1]
-                y_steps = [-1, 0, 1]
+                y_steps = [0, 1, -1]
             elif x_range < 0 and y_range == 0:
                 x_steps = [0, -1, 1]
-                y_steps = [-1, 0, 1]
+                y_steps = [0, 1, -1]
             elif x_range > 0 and y_range > 0:
                 x_steps = [0, 1, -1]
                 y_steps = [0, 1, -1]
@@ -477,7 +485,7 @@ class Game:
                 y_steps = [-1, 0]
 
             # move len +1 i.e. 5 Kt, 4 Kg & Q, 3 R
-            if len(self.__move_list) == self.__VALID_MOVE_DICT[piece_type] + 1:
+            if len(self.__move_list) == self.__VALID_MOVE_DICT[piece_type] + 1 or len(self.__move_list) == self.__min_moves + 1:
                 return False
 
             for item in x_steps:
@@ -501,6 +509,37 @@ class Game:
             return False
         else:
             return False
+        
+        
+        
+    def bfs(self, from_x: int, from_y: int, to_x: int, to_y: int):
+        self.__ways = {}
+        self.__dist = {}
+        self.__min_moves = None
+        start = (from_x, from_y)
+        goal = (to_x, to_y)
+        queue = [start]
+        self.__dist[start] = 0
+        self.__ways[start] = 1
+
+        while len(queue):
+            cur = queue[0]
+            queue.pop(0)
+            if cur == goal:
+                #print("reached goal in %d moves and %d ways"%(self.__dist[cur], self.__ways[cur]))
+                self.__min_moves = self.__dist[cur]
+                return
+
+            for move in [(0,1), (0,-1), (1,0), (1,1), (1,-1), (-1,0), (-1,1), (-1,-1)]:
+                    next_pos = cur[0] + move[0], cur[1] + move[1]
+                    if next_pos in self.__dist and self.__dist[next_pos] == self.__dist[cur] + 1:
+                        self.__ways[next_pos] += self.__ways[cur]
+                    if next_pos not in self.__dist:
+                        self.__dist[next_pos] = self.__dist[cur]+1
+                        self.__ways[next_pos] = self.__ways[cur]
+                        queue.append(next_pos)
+                        
+                        
 
     def __is_rook_attack(self, from_x:int, from_y:int, to_x:int, to_y:int)->bool:
         self.__move_path = []
