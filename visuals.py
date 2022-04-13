@@ -359,7 +359,6 @@ class BoardVis(QMainWindow):
         self.attackSuccess = None
         self.diceRollResult = -1
 
-        self.sbs_delay = QTimer(self)
         self.sbs_delay_ms = 400
 
         self.ai_player = None
@@ -468,16 +467,18 @@ class BoardVis(QMainWindow):
         if len(new_spots)>1:
             new_spots.reverse()
 
+            sbs_delay = QTimer(self)
+
             def spot_by_spot():
                 if len(new_spots)==0:
-                    self.sbs_delay.stop()
+                    sbs_delay.stop()
                     return
                 x, y = new_spots.pop()
                 print(x,y)
                 piece.move(x, y)
 
-            self.sbs_delay.timeout.connect(spot_by_spot)
-            self.sbs_delay.start(self.sbs_delay_ms)
+            sbs_delay.timeout.connect(spot_by_spot)
+            sbs_delay.start(self.sbs_delay_ms)
         else:
             piece.move(new_spot[0], new_spot[1])
 
@@ -901,6 +902,8 @@ class BoardVis(QMainWindow):
     def make_AI_move(self):
         global ai_turn
         ai_turn = True
+        if game_over:
+            return
         if self.AivAiButton.isChecked():
             if self.controller.is_game_over():
                 ai_turn = False
@@ -908,9 +911,9 @@ class BoardVis(QMainWindow):
                 return
             self.ai_player = self.ai_v_ai_players[self.controller.tracker.current_player]
         else:
-        if not self.computerButton.isChecked() or self.ai_turn_over():
-            ai_turn = False
-            return      # ai not selected, bail out of function
+            if not self.computerButton.isChecked() or self.ai_turn_over():
+                ai_turn = False
+                return      # ai not selected, bail out of function
         self.ai_move_delay.start(self.ai_move_delay_ms)
 
     def ai_single_move(self):
@@ -938,6 +941,8 @@ class BoardVis(QMainWindow):
             new_spot = board_to_screen(from_x, from_y, self.tileSize)
 
         def updates():
+            if game_over:
+                return
             self._update_pieces()
             self.update_labels()
             self.update_captured_pieces()
@@ -946,17 +951,19 @@ class BoardVis(QMainWindow):
         if len(new_spots)>1:
             new_spots.reverse()
 
+            sbs_delay = QTimer(self)
+
             def ai_spot_by_spot():
                 if len(new_spots)==0:
-                    self.sbs_delay.stop()
+                    sbs_delay.stop()
                     updates()
                     return
                 x, y = new_spots.pop()
                 print(x,y)
                 ai_mv_piece.move(x, y)
 
-            self.sbs_delay.timeout.connect(ai_spot_by_spot)
-            self.sbs_delay.start(self.sbs_delay_ms)
+            sbs_delay.timeout.connect(ai_spot_by_spot)
+            sbs_delay.start(self.sbs_delay_ms)
         else:
             updates()
 
@@ -979,6 +986,9 @@ class BoardVis(QMainWindow):
         return
 
     def startGameClicked(self):
+        global game_over
+        game_over = False
+
         self.theme_menu.close()
         if self.medievalButton.isChecked():
             self.__game_type = "Medieval"
@@ -1118,6 +1128,8 @@ class BoardVis(QMainWindow):
         if self.AivAiButton.isChecked():
             return
         self.controller.tracker.end_turn()
+        self.ai_move_delay.stop()
+        self._update_pieces()
         self.remove_all_h()
         self.update_labels()
         self.reset_movement_data()
@@ -1195,8 +1207,9 @@ class BoardVis(QMainWindow):
         self.startGameButton.hide()
 
     def returnToStartScreen(self):
+        self.ai_move_delay.stop()
         global game_over
-        game_over = False
+        game_over = True
         self.restartButton.hide()
         self.endTurnButton.hide()
         self.moveIndicator.hide()
