@@ -1,5 +1,4 @@
 from math import floor
-from tokenize import String
 from typing import Tuple
 from xmlrpc.client import Boolean
 from PyQt5.QtCore import Qt, QPoint, QSize, QTimer
@@ -11,7 +10,6 @@ from ChessAI import AIFunctions
 from ChessGame import Game as chess_game
 
 game_over = False
-lock_input = False
 ai_turn = False
 
 def corp_to_color(corp_num):
@@ -96,8 +94,6 @@ class PieceVis(QLabel):
     def mousePressEvent(self, ev: QMouseEvent) -> None:
         if self.should_freeze():
             return
-        if lock_input == True:
-            return
         #If user clicks on a piece, it will be moved to the starting position
         #self.start =  screen_to_board(ev.windowPos().x(), ev.windowPos().y(), self.parent().tileSize)
         #print("start x: ", self.start[0], " y: ", self.start[1])
@@ -108,8 +104,6 @@ class PieceVis(QLabel):
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:
         # doesn't use should_freeze to allow for attacks
         if game_over or ai_turn or self.not_same_team():
-            return
-        if lock_input == True:
             return
         if ((ev.globalPos() - self.parent().pos()) - QPoint(0, 30)).x() < (0 + (self.parent().tileSize / 2)) \
                 and ((ev.globalPos() - self.parent().pos()) - QPoint(0, 30)).y() < \
@@ -165,8 +159,6 @@ class PieceVis(QLabel):
         drag_move = False
         click_end = False
         if self.should_freeze():
-            return
-        if lock_input == True:
             return
         self.onBoarder = False
         print(self)
@@ -288,8 +280,6 @@ class BoardVis(QMainWindow):
         self.setWindowTitle("Chess Board")
         self.highlighted = []
         self.corp_menu = CorpMenu(self)
-        self.ai_move_delay = QTimer(self)
-        self.ai_move_delay.timeout.connect(self.ai_single_move)
 
         self.theme_menu = ThemeMenu(400,400, self)
         self.corner_tile = None
@@ -306,10 +296,10 @@ class BoardVis(QMainWindow):
         self.options.clicked.connect(self.theme_menu.show)
 
         # This button allow you can stop your turn
-        self.stopButton = QPushButton("End Turn", self)
+        self.endTurnButton = QPushButton("End Turn", self)
 
         # This button allow you can reset the game when you want to start new game
-        self.newGameButton = QPushButton("Restart", self)
+        self.restartButton = QPushButton("Restart", self)
 
         # choose highlight mode on/off
         self.corpButton = QPushButton("Manage Corps", self)
@@ -369,9 +359,15 @@ class BoardVis(QMainWindow):
         self.attackSuccess = None
         self.diceRollResult = -1
 
-        self.ai_player = None
+        self.sbs_delay = QTimer(self)
         self.sbs_delay_ms = 400
+
+        self.ai_player = None
+        self.ai_v_ai_players = []
+
+        self.ai_move_delay = QTimer(self)
         self.ai_move_delay_ms = 1000
+        self.ai_move_delay.timeout.connect(self.ai_single_move)
 
         self.theme = None
 
@@ -472,18 +468,16 @@ class BoardVis(QMainWindow):
         if len(new_spots)>1:
             new_spots.reverse()
 
-            sbs_delay = QTimer(self)
-
             def spot_by_spot():
                 if len(new_spots)==0:
-                    sbs_delay.stop()
+                    self.sbs_delay.stop()
                     return
                 x, y = new_spots.pop()
                 print(x,y)
                 piece.move(x, y)
 
-            sbs_delay.timeout.connect(spot_by_spot)
-            sbs_delay.start(self.sbs_delay_ms)
+            self.sbs_delay.timeout.connect(spot_by_spot)
+            self.sbs_delay.start(self.sbs_delay_ms)
         else:
             piece.move(new_spot[0], new_spot[1])
 
@@ -583,7 +577,7 @@ class BoardVis(QMainWindow):
         self.corpButton.setCheckable(True)
         self.corpButton.clicked.connect(self.corpBClicked)
         self.corpButton.resize(180,40)
-        self.corpButton.move(int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2)) - 50,
+        self.corpButton.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 50,
                              25)
 
         self.wCapturedText = QLabel(self)
@@ -601,7 +595,7 @@ class BoardVis(QMainWindow):
         font.setFamily("Baskerville")
         font.setPixelSize(self.moveIndicator.height() * 0.6)
         self.wCapturedText.setFont(font)
-        self.wCapturedText.move(int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2)) - 60,
+        self.wCapturedText.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 60,
                              390)
 
         #set frame for wCapturedPic:
@@ -621,7 +615,7 @@ class BoardVis(QMainWindow):
         font.setPixelSize(self.moveIndicator.height() * 0.6)
         self.bCapturedText.setFont(font)
         self.bCapturedText.move(
-            int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2)) - 60,
+            int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 60,
             95)
 
         # set frame for bCapturedPic:
@@ -635,23 +629,23 @@ class BoardVis(QMainWindow):
             self.corpButton.hide()
 
     #Create stop button properties
-        self.__set_button(self.stopButton, 0.7)
-        self.stopButton.clicked.connect(self.stopButtonClicked)
-        self.stopButton.move(int(self.boardSize - ((self.stopButton.width() - self.tableOption.width()) / 2))-50,
-                              int(self.boardSize / 2 + 250) - (self.stopButton.height() * 0.5)-20)
+        self.__set_button(self.endTurnButton, 0.7)
+        self.endTurnButton.clicked.connect(self.endTurnClicked)
+        self.endTurnButton.move(int(self.boardSize - ((self.endTurnButton.width() - self.tableOption.width()) / 2))-50,
+                              int(self.boardSize / 2 + 250) - (self.endTurnButton.height() * 0.5)-20)
 
-        self.stopButton.resize(180,40)
-        self.stopButton.hide()
+        self.endTurnButton.resize(180,40)
+        self.endTurnButton.hide()
 
     #Create restart button properties
 
-        self.__set_button(self.newGameButton, 0.7)
-        self.newGameButton.move(int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2))-50,
-                             int(self.boardSize / 2 + 300) - (self.newGameButton.height() * 0.5)-20)
+        self.__set_button(self.restartButton, 0.7)
+        self.restartButton.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2))-50,
+                             int(self.boardSize / 2 + 300) - (self.restartButton.height() * 0.5)-20)
 
-        self.newGameButton.resize(180,40)
-        self.newGameButton.clicked.connect(self.returnToStartScreen)
-        self.newGameButton.hide()
+        self.restartButton.resize(180,40)
+        self.restartButton.clicked.connect(self.returnToStartScreen)
+        self.restartButton.hide()
 
         # Create StartScreen properties
         self.startScreen.setAlignment(Qt.AlignCenter)
@@ -888,7 +882,7 @@ class BoardVis(QMainWindow):
             captured_pc.setPixmap(cap)
             captured_pc.resize(img_size, img_size)
             captured_pc.move(
-                int(self.boardSize - ((self.newGameButton.width() - self.tableOption.width()) / 2)) - 10 + (img_size*(i%5)),
+                int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 10 + (img_size*(i%5)),
                     starting + (offset*int(i/5))
             )
             self.captured_by[color].append(captured_pc)
@@ -907,6 +901,13 @@ class BoardVis(QMainWindow):
     def make_AI_move(self):
         global ai_turn
         ai_turn = True
+        if self.AivAiButton.isChecked():
+            if self.controller.is_game_over():
+                ai_turn = False
+                self.handle_gameover()
+                return
+            self.ai_player = self.ai_v_ai_players[self.controller.tracker.current_player]
+        else:
         if not self.computerButton.isChecked() or self.ai_turn_over():
             ai_turn = False
             return      # ai not selected, bail out of function
@@ -945,20 +946,17 @@ class BoardVis(QMainWindow):
         if len(new_spots)>1:
             new_spots.reverse()
 
-            ai_sbs_delay = QTimer(self)
-
             def ai_spot_by_spot():
                 if len(new_spots)==0:
-                    ai_sbs_delay.stop()
+                    self.sbs_delay.stop()
                     updates()
                     return
                 x, y = new_spots.pop()
                 print(x,y)
-                ai_mv
                 ai_mv_piece.move(x, y)
 
-            ai_sbs_delay.timeout.connect(ai_spot_by_spot)
-            ai_sbs_delay.start(self.sbs_delay_ms)
+            self.sbs_delay.timeout.connect(ai_spot_by_spot)
+            self.sbs_delay.start(self.sbs_delay_ms)
         else:
             updates()
 
@@ -969,47 +967,11 @@ class BoardVis(QMainWindow):
             return True
         return self.whiteButton.isChecked() == whites_turn    # the active color is the color the human chose, no longer computer's turn
 
-    def AIvAI(self):
-        white_player = (self.controller.tracker.get_current_player()==1)
-        if white_player == True and not self.controller.game_status():
-            self.ai_1.make_move()
-            white_player = (self.controller.tracker.get_current_player()==1)
-            self._update_pieces()
-            self.update_labels()
-            if self.controller.game_status():
-                global game_over
-                game_over = True
-                self.stopButton.hide()
-                self.moveIndicator.hide()
-                self.tableOption.setText("Winner: " +
-                                        ("White" if self.controller.tracker.get_current_player() else "Black") +
-                                        " Team!")
-                global lock_input
-                self.timer3.stop()
-                lock_input = False
-                return
-            return
-        if white_player == False and not self.controller.game_status():
-            self.ai_2.make_move()
-            white_player = (self.controller.tracker.get_current_player()==1)
-            self._update_pieces()
-            self.update_labels()
-            if self.controller.game_status():
-                game_over = True
-                self.stopButton.hide()
-                self.moveIndicator.hide()
-                self.tableOption.setText("Winner: " +
-                                        ("White" if self.controller.tracker.get_current_player() else "Black") +
-                                        " Team!")
-                self.timer3.stop()
-                lock_input = False
-                return
-            return
 
     def handle_gameover(self):
         global game_over
         game_over = True
-        self.stopButton.hide()
+        self.endTurnButton.hide()
         self.moveIndicator.hide()
         self.tableOption.setText("Winner: " +
                                 ("White" if self.controller.tracker.get_current_player() else "Black") +
@@ -1055,26 +1017,18 @@ class BoardVis(QMainWindow):
         self.hideStartScreen()
         self.tableOption.show()
         self.moveIndicator.show()
-        self.newGameButton.show()
-        self.stopButton.show()
+        self.restartButton.show()
+        self.endTurnButton.show()
 
         if self.blackButton.isChecked() and not self.AivAiButton.isChecked():
             self.make_AI_move()
 
         if self.AivAiButton.isChecked():
             self.controller.tracker.current_player = 1
-            self.ai_1 = AIFunctions(self.controller, 1)
-            self.controller.tracker.current_player = 0
-            self.ai_2 = AIFunctions(self.controller, 0)
-            self.controller.tracker.current_player = 1
-
-            self.timer3 = QTimer(self)
-            self.timer3.setSingleShot(False)
-            self.timer3.setInterval(300)
-            self.timer3.timeout.connect(lambda: self.AIvAI())
-            global lock_input
-            lock_input = True
-            self.timer3.start()
+            ai_1 = AIFunctions(self.controller, 1)
+            ai_2 = AIFunctions(self.controller, 0)
+            self.ai_v_ai_players = [ai_2, ai_1]
+            self.make_AI_move()
 
     def __rolldiceWork(self):
         moveIntoSidePanel = ((925-self.boardSize)/2)
@@ -1130,7 +1084,7 @@ class BoardVis(QMainWindow):
             self.resultCaptureText.setText("Capture Successful! \n Game Over!!")
             global game_over
             game_over = True
-            self.stopButton.hide()
+            self.endTurnButton.hide()
             self.moveIndicator.hide()
             self.tableOption.setText("Winner: " +
                                     ("White" if self.controller.tracker.get_current_player() else "Black") +
@@ -1160,7 +1114,7 @@ class BoardVis(QMainWindow):
         self.set_non_playables()
         self._update_pieces()
 
-    def stopButtonClicked(self):
+    def endTurnClicked(self):
         self.controller.tracker.end_turn()
         self.remove_all_h()
         self.update_labels()
@@ -1241,8 +1195,8 @@ class BoardVis(QMainWindow):
     def returnToStartScreen(self):
         global game_over
         game_over = False
-        self.newGameButton.hide()
-        self.stopButton.hide()
+        self.restartButton.hide()
+        self.endTurnButton.hide()
         self.moveIndicator.hide()
         self.tableOption.hide()
         self.corpButton.hide()
@@ -1313,7 +1267,6 @@ class BoardVis(QMainWindow):
             for i, (ltr, num) in enumerate(zip(letters, nums)):
                 self.border[0][i].setPixmap(QPixmap('./picture/' + border_bg+ltr))
                 self.border[1][i].setPixmap(QPixmap('./picture/' + border_bg+num))
-
 
     def set_emptys(self, white, black, move_h, atk_h):
         is_white = True
@@ -1621,9 +1574,7 @@ class ThemeMenu(QWidget):
         themes_layout.setSpacing(0)
         self.setLayout(themes_layout)
 
-
-
-    def get_theme(self) -> String:
+    def get_theme(self) -> str:
         return self.theme
 
     def set_theme(self, name):
