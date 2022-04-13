@@ -3,7 +3,7 @@ import random
 from ChessGame import Game
 
 
-#game = Game()
+game = Game()
 
 class AIFunctions:
     def __init__(self, game: Game, color):
@@ -13,7 +13,18 @@ class AIFunctions:
         self.total_success_moves = 0
         self.total_moves_attempted = 0
         self.last_turn = 0
+        self.kingmod = 1
         self.hostilemap = \
+            [[0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0]]
+
+        self.kingOrderGrid = \
             [[0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -53,6 +64,54 @@ class AIFunctions:
                     return (x, y)
         print('piece not on board')
         return (-1, -1)
+
+    #feed x,y of moved king corp piece for orders
+    def kingOrders(self, x, y):
+        self.resetKingOrders()
+
+        #determine piece advantage
+        white = 0
+        black = 0
+
+        for item in self.board:
+            for item2 in item:
+                if item2.piece:
+                    if item2.piece.is_white():
+                        white = white+1
+                    else:
+                        black = black+1
+
+        korder = True
+        if(white > black and self.color == True or black > white and self.color == False):
+            korder = False
+
+        #if the AI does not have piece advantage, make more defensive moves
+        if(korder):
+            list = self.game.get_possible_moves_for_piece_at(x = y, y = x, ai_backdoor=True)
+            for l,m,p in list:
+                #sets spot values near the moved king piece to be higher
+                #also increases the danger of hostile pieces to encourage shorter moves.
+                if(l - x == 1 or x - l == 1 and m - y == 1 or y - m == 1):
+                    self.kingOrderGrid[m][l] = 2
+                    self.kingmod = 3
+        #else the AI has piece advantage, make more aggressive moves
+        else:
+            #applies to the hostilemap, reducing the impact of dangerous spots,
+            #therefore permitting more aggressive movement
+            self.kingmod = .2
+            self.genHostileMap()
+
+    def resetKingOrders(self):
+        self.kingmod = 1
+        self.kingOrderGrid = \
+            [[0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0, 0, 0, 0]]
 
     # weights attack areas based on friendly piece power
     def attackRef(self, x, y, piece):
@@ -141,6 +200,10 @@ class AIFunctions:
                         else:
                             spotVal = .4
                         for a, b, c in moveList:
+                            if (a - x == 1 or x - a == 1 and b - y == 1 or b - a == 1):
+                                self.hostilemap[b][a] += spotVal * self.kingmod
+                            elif(item2.piece.get_type() == 'Rook' or item2.piece.get_type() == 'Knight'):
+                                self.hostilemap[b][a] += spotVal * self.kingmod
                             self.hostilemap[b][a] += spotVal
 
                             found = False
@@ -237,6 +300,7 @@ class AIFunctions:
                                 if player == "black":
                                     if (m - x == 5 or x - m == 5 or l - y == 5):
                                         heatmap[m][l] += 1
+                            heatmap[m][l] += spotVal - self.hostilemap[m][l] + self.kingOrderGrid[m][l]
                             if item2.piece.get_type() != 'King':
                                 hosval = self.hostilemap[m][l] % 1000
                             else:
@@ -535,13 +599,12 @@ class AIFunctions:
                   'this turn')
 
 
-# aiAssistWhite = AIFunctions(game, True)
-# aiAssistBlack = AIFunctions(game, False)
-#
-#
-# for num in range (44):
-#     if game.tracker.get_current_player():
-#         aiAssistWhite.make_move()
-#     else:
-#         aiAssistBlack.make_move()
-#
+aiAssistWhite = AIFunctions(game, True)
+aiAssistBlack = AIFunctions(game, False)
+
+
+for num in range (44):
+    if game.tracker.get_current_player():
+        aiAssistWhite.make_move()
+    else:
+        aiAssistBlack.make_move()
