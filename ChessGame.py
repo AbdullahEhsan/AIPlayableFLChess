@@ -147,12 +147,12 @@ class Game:
                     if (i, j) != (0, 0):
                         # checks for duplicates
                         for c_x, c_y in [(x + i, y + j), (x + i, y - j), (x - i, y + j), (x - i, y - j)]:
-                            if ((c_x, c_y, True) not in possibles and
-                                    (c_x, c_y, False) not in possibles and
-                                    not (c_x > 7 or c_y > 7 or c_x < 0 or c_y < 0)):
-                                if piece_type == "Bishop" and not (
-                                        i == j or i == 0 or j == 0):  # checks if invalid move for Bishop
-                                    continue
+                            if ((c_x, c_y, True) not in possibles
+                                and (c_x, c_y, False) not in possibles
+                                and not (c_x > 7 or c_y > 7 or c_x < 0 or c_y < 0)):
+                                # if piece_type == "Bishop" and not (
+                                #         i == j or i == 0 or j == 0):  # checks if invalid move for Bishop
+                                #     continue
                                 possibles.append((c_x, c_y, self.__board[c_y][c_x].has_piece()))
 
         else:
@@ -375,74 +375,74 @@ class Game:
             else:
                 self.__move_message += "Chosen move is too far away. "
             return in_range
-        if piece_type == 'Bishop':
-            if (abs(to_x - from_x) > 1 or abs(to_y - from_y) > 1) and self.__board[to_y][to_x].piece is not None:
-                return False
-            if ((abs(to_x - from_x) == 2 or abs(to_y - from_y) == 2) and
-                not self.__get_small_path(from_x, from_y, to_x, to_y)):
-                self.__move_message += f"No clear path to ({str(to_x)}, {str(to_y)}). "
-                return False
-            else:
-                in_range = ((abs(to_x - from_x) <= 2 and (to_y - from_y) == 0) or
-                          (abs(to_y - from_y) <= 2 and (to_x - from_x) == 0) or
-                          (abs(to_x - from_x) == 1 and abs(to_y - from_y) == 1) or
-                          (abs(to_x - from_x) == 2 and abs(to_y - from_y) == 2))
-                if in_range:
-                    self.__move_path = []
-                    x_diff, y_diff = to_x - from_x, to_y - from_y  # distance of move
-                    check_x, check_y = 0, 0  # distance of spot to be checked
-                    # horizontal movement
-                    if abs(x_diff) == 2:
-                        check_x = int(x_diff / 2)
-                    # vertical movement
-                    if abs(y_diff) == 2:
-                        check_y = int(y_diff / 2)
-                    if (middle := (from_x+check_x, from_y+check_y)) != (from_x, from_y):
-                        self.__move_path.append(middle)
-                    self.__move_path.append((to_x, to_y))
-                else:
-                    self.__move_message += "Chosen move is too far away."
-                return in_range
+        # if piece_type == 'Bishop':
+        #     if (abs(to_x - from_x) > 1 or abs(to_y - from_y) > 1) and self.__board[to_y][to_x].piece is not None:
+        #         return False
+        #     if ((abs(to_x - from_x) == 2 or abs(to_y - from_y) == 2) and
+        #         not self.__get_small_path(from_x, from_y, to_x, to_y)):
+        #         self.__move_message += f"No clear path to ({str(to_x)}, {str(to_y)}). "
+        #         return False
+        #     else:
+        #         in_range = ((abs(to_x - from_x) <= 2 and (to_y - from_y) == 0) or
+        #                   (abs(to_y - from_y) <= 2 and (to_x - from_x) == 0) or
+        #                   (abs(to_x - from_x) == 1 and abs(to_y - from_y) == 1) or
+        #                   (abs(to_x - from_x) == 2 and abs(to_y - from_y) == 2))
+        #         if in_range:
+        #             self.__move_path = []
+        #             x_diff, y_diff = to_x - from_x, to_y - from_y  # distance of move
+        #             check_x, check_y = 0, 0  # distance of spot to be checked
+        #             # horizontal movement
+        #             if abs(x_diff) == 2:
+        #                 check_x = int(x_diff / 2)
+        #             # vertical movement
+        #             if abs(y_diff) == 2:
+        #                 check_y = int(y_diff / 2)
+        #             if (middle := (from_x+check_x, from_y+check_y)) != (from_x, from_y):
+        #                 self.__move_path.append(middle)
+        #             self.__move_path.append((to_x, to_y))
+        #         else:
+        #             self.__move_message += "Chosen move is too far away."
+        #         return in_range
 
-        if piece_type in ('Rook', 'Knight', 'King', 'Queen'):
+        if piece_type in ('Bishop', 'Rook', 'Knight', 'King', 'Queen'):
             if self.__is_rook_attack(from_x, from_y, to_x, to_y):
                 return True
             if (abs(to_x - from_x) > 1 or abs(to_y - from_y) > 1) and self.__board[to_y][to_x].piece is not None:
                 return False
             else:
-                if (abs(to_x - from_x) > self.__VALID_MOVE_DICT[piece_type] and
-                        abs(to_y - from_y) > self.__VALID_MOVE_DICT[piece_type]):
+                if (abs(to_x - from_x) > self.__VALID_MOVE_DICT[piece_type]
+                    and abs(to_y - from_y) > self.__VALID_MOVE_DICT[piece_type]):
                     self.__move_message += "Chosen move is too far away. "
                     return False
                 elif not self.__get_small_path(from_x, from_y, to_x, to_y):
                     self.__move_message += f"No clear path to ({str(to_x)}, {str(to_y)}). "
                     return False
-        
+
         return True
 
-    
+
     def __get_small_path(self, from_x: int, from_y: int, to_x: int, to_y: int):
         self.__move_list = []
         self.__move_path = []
         self.bfs(from_x=from_x, from_y=from_y, to_x=to_x, to_y=to_y)
         return self.__is_clear_path(from_x=from_x, from_y=from_y, to_x=to_x, to_y=to_y)
-    
-    
+
+
     def __is_clear_path(self, from_x: int, from_y: int, to_x: int, to_y: int):
         current_piece = self.__board[from_y][from_x].piece
         target = self.__board[to_y][to_x]
         piece_type = current_piece.get_type()
-        if piece_type == 'Bishop':
-            x_diff, y_diff = to_x - from_x, to_y - from_y  # distance of move
-            check_x, check_y = 0, 0  # distance of spot to be checked
-            # horizontal movement
-            if abs(x_diff) == 2:
-                check_x = int(x_diff / 2)
-            # vertical movement
-            if abs(y_diff) == 2:
-                check_y = int(y_diff / 2)
-            return (not self.__board[from_y + check_y][from_x + check_x].has_piece())
-        if piece_type in ('Rook', 'Knight', 'King', 'Queen'):
+        # if piece_type == 'Bishop':
+        #     x_diff, y_diff = to_x - from_x, to_y - from_y  # distance of move
+        #     check_x, check_y = 0, 0  # distance of spot to be checked
+        #     # horizontal movement
+        #     if abs(x_diff) == 2:
+        #         check_x = int(x_diff / 2)
+        #     # vertical movement
+        #     if abs(y_diff) == 2:
+        #         check_y = int(y_diff / 2)
+        #     return (not self.__board[from_y + check_y][from_x + check_x].has_piece())
+        if piece_type in ('Bishop', 'Rook', 'Knight', 'King', 'Queen'):
             if len(self.__move_list) == 0:
                 self.__move_list.append(target)
 
@@ -510,7 +510,7 @@ class Game:
             return False
         else:
             return False
-        
+
     def bfs(self, from_x: int, from_y: int, to_x: int, to_y: int):
         self.__ways = {}
         self.__dist = {}
@@ -538,8 +538,8 @@ class Game:
                         self.__dist[next_pos] = self.__dist[cur]+1
                         self.__ways[next_pos] = self.__ways[cur]
                         queue.append(next_pos)
-                        
-                        
+
+
 
     def __is_rook_attack(self, from_x:int, from_y:int, to_x:int, to_y:int)->bool:
         self.__move_path = []
