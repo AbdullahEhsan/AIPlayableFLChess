@@ -2,6 +2,7 @@ import random
 from ChessGameHelpers import Piece, Spot
 from turnManager import MedievalTurnManager, CorpCommandTurnManager
 from ThreeCorp import Corp
+from collections import deque
 
 class Game:
     def __init__(self, game_type = "Corp"):
@@ -510,21 +511,20 @@ class Game:
         else:
             return False
         
-        
-        
     def bfs(self, from_x: int, from_y: int, to_x: int, to_y: int):
         self.__ways = {}
         self.__dist = {}
         self.__min_moves = None
         start = (from_x, from_y)
         goal = (to_x, to_y)
-        queue = [start]
+        queue = deque()
+        queue.append(start)
         self.__dist[start] = 0
         self.__ways[start] = 1
 
         while len(queue):
             cur = queue[0]
-            queue.pop(0)
+            queue.popleft()
             if cur == goal:
                 #print("reached goal in %d moves and %d ways"%(self.__dist[cur], self.__ways[cur]))
                 self.__min_moves = self.__dist[cur]
