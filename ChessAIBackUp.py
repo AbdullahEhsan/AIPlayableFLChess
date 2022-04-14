@@ -3,7 +3,7 @@ import random
 from ChessGame import Game
 
 
-# game = Game()
+game = Game()
 
 class AIFunctions:
     def __init__(self, game: Game, color):
@@ -64,57 +64,6 @@ class AIFunctions:
                     return (x, y)
         print('piece not on board')
         return (-1, -1)
-
-    def corpBalance(self):
-        lcore = 0
-        rcore = 0
-        kcore = 0
-        pawnString = ""
-        rookString = ""
-        for item in self.board:
-            for item2 in item:
-                if item2.piece:
-                    if self.color == item2.piece.is_white():
-                        if item2.piece.get_corp() == 'corpW1' or item2.piece.get_corp() == 'corpB1':
-                            kcore = kcore + self.pieceweight(item2.piece)
-                        elif item2.piece.get_corp() == 'corpW2' or item2.piece.get_corp() == 'corpB2':
-                            lcore = lcore + self.pieceweight(item2.piece)
-                        elif item2.piece.get_corp() == 'corpW2'  or item2.piece.get_corp() == 'corpB3':
-                            rcore = rcore + self.pieceweight(item2.piece)
-
-        #checks if a corp has more than the king
-        #if so, the king takes a piece from that corp
-        if kcore - rcore > kcore - lcore:
-            print(lcore - kcore)
-            if(lcore - kcore>=2):
-                print("taking rook from lcore")
-                # TODO: get location of designated piece(ensuring its still in play)
-                #  and return the piece as an object along with the corp it should be changed to
-            else:
-                print("taking pawn from lcore")
-        elif kcore - rcore < kcore - lcore:
-            print(rcore - kcore)
-            if (rcore - kcore >= 2):
-                print("taking rook from rcore")
-            else:
-                print("taking pawn from rcore")
-
-
-
-    #rcore 7
-    #lcore 7
-    #kcore 10
-    #idea is to balance corps out. IE, if the kings corp loses
-    #a power piece, the bishops will
-    def pieceweight(self, piece):
-        if piece.get_type() == 'Pawn':
-            return 1
-        elif piece.get_type() == 'Rook':
-            return 2
-        elif piece.get_type() == 'Knight':
-            return 4
-        elif piece.get_type() == 'Queen':
-            return 4
 
     #feed x,y of moved king corp piece for orders
     def kingOrders(self, x, y):
@@ -241,12 +190,6 @@ class AIFunctions:
         for item in self.board:
             for item2 in item:
                 if item2.piece:
-                    # if self.color == item2.piece.is_white():
-                    #     if (item2.piece.get_type() == 'King'):
-                    #         KingLocation = (y, x)
-                    #         print ('==========================================================')
-                    #         print('testing KingLocation', KingLocation ,'\n\n\n')
-
                     if self.color != item2.piece.is_white():
                         moveList = self.game.get_possible_moves_for_piece_at(x=y, y=x, ai_backdoor=True)
 
@@ -656,8 +599,8 @@ class AIFunctions:
                   'this turn')
 
 
-# aiAssistWhite = AIFunctions(game, True)
-# aiAssistBlack = AIFunctions(game, False)
+aiAssistWhite = AIFunctions(game, True)
+aiAssistBlack = AIFunctions(game, False)
 
 
 # for num in range (100):

@@ -4,7 +4,7 @@ from xmlrpc.client import Boolean
 from PyQt5.QtCore import Qt, QPoint, QSize, QTimer
 from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, QGridLayout, \
     QComboBox, QRadioButton, QButtonGroup
-from PyQt5.QtGui import QPixmap, QMouseEvent, QFont,QMovie, QIcon
+from PyQt5.QtGui import QPixmap, QMouseEvent, QFont, QMovie, QIcon
 from ChessAI import AIFunctions
 
 from ChessGame import Game as chess_game
@@ -940,8 +940,10 @@ class BoardVis(QMainWindow):
     def ai_single_move(self):
         self.ai_move_delay.stop()
 
-        ai_mv_map = self.ai_player.moveMap()
-        ai_mv = self.ai_player.best_move(ai_mv_map)
+        ai_mv_map_k = self.ai_player.moveMap()
+        ai_mv_map_x = self.ai_player.moveMap()
+        ai_mv_map_t = self.ai_player.moveMap()
+        ai_mv = self.ai_player.best_move(ai_mv_map_k, ai_mv_map_x, ai_mv_map_t)
         to_x, to_y = ai_mv[0], ai_mv[1]
         from_x, from_y = ai_mv[4], ai_mv[5]
         ai_mv_piece = self.piecePos[from_y][from_x]
