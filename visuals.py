@@ -61,6 +61,23 @@ class PieceVis(QLabel):
         if color not in ('white', 'black'):
             color = ''
         self.color = color
+        self.piece_type = ""
+        if "ki" in visual.lower():
+            self.piece_type = 'King'
+        else:
+            pcs = {
+                'p': 'Pawn',
+                'r': 'Rook',
+                'b': 'Bishop',
+                'k': 'Knight',
+                'q': 'Queen'
+                }
+            for pc_type in pcs:
+                if pc_type == visual[1].lower():
+                    self.piece_type = pcs[pc_type]
+                    break
+
+
         # Set up some properties
         self.labelPos = QPoint()
         self.vis = visual
@@ -355,6 +372,7 @@ class BoardVis(QMainWindow):
         self.rollText = QLabel(self)
         self.rollDiceAnimation = QLabel(self)
         self.resultCaptureText = QLabel(self)
+        self.aiPieceInfoText = QLabel(self)
         self.okayButton = QPushButton("Return to Board", self)
         self.attackSuccess = None
         self.diceRollResult = -1
@@ -363,6 +381,8 @@ class BoardVis(QMainWindow):
 
         self.ai_player = None
         self.ai_v_ai_players = []
+
+        self.ai_attack_info = None
 
         self.ai_move_delay = QTimer(self)
         self.ai_move_delay_ms = 1000
@@ -430,6 +450,7 @@ class BoardVis(QMainWindow):
         # roll dice screen
         self.rollText.setStyleSheet(alt_text_css if theme=='marble' else text_css)
         self.resultCaptureText.setStyleSheet(alt_text_css if theme=='marble' else text_css)
+        self.aiPieceInfoText.setStyleSheet(text_css+';background-color: rgba(0, 0, 0, 0.8)')
 
         self.okayButton.setStyleSheet(button_css)
 
@@ -928,6 +949,8 @@ class BoardVis(QMainWindow):
             return
 
         isAttack = (to_x, to_y, True) in self.controller.get_possible_moves_for_piece_at(x=from_x, y=from_y)
+        if isAttack:
+            target_piece = self.piecePos[to_y][to_x]
 
         moveSuccessful = self.controller.move_piece(from_x=from_x, from_y=from_y,
                                                     to_x=to_x, to_y=to_y)
@@ -951,6 +974,16 @@ class BoardVis(QMainWindow):
             self.update_labels()
             self.update_captured_pieces()
             if isAttack:
+                self.ai_attack_info = {
+                    'fromx': str(chr(65+from_x)),
+                    'fromy': (8-from_y),
+                    'fromclr': ai_mv_piece.color.title(),
+                    'fromtype': ai_mv_piece.piece_type,
+                    'tox': str(chr(65+to_x)),
+                    'toy': (8-to_y),
+                    'toclr': target_piece.color.title(),
+                    'totype': target_piece.piece_type
+                }
                 self.rollDiceScreen(moveSuccessful)
             else:
                 self.make_AI_move()
@@ -1065,6 +1098,27 @@ class BoardVis(QMainWindow):
                            int((self.boardSize / 2) - 300))
         self.rollText.hide()
 
+        if self.ai_attack_info:
+            self.aiPieceInfoText.setAlignment(Qt.AlignCenter)
+            self.aiPieceInfoText.resize(900, 100)
+            font = QFont()
+            font.setFamily('Arial')
+            font.setPixelSize(self.aiPieceInfoText.height() * 0.3)
+            self.aiPieceInfoText.setFont(font)
+            self.aiPieceInfoText.move(int((self.boardSize / 2) - (self.rollText.width() / 2)) + moveIntoSidePanel,
+                            int((self.boardSize / 2))+200)
+            text = \
+                f"{self.ai_attack_info['fromclr']} {self.ai_attack_info['fromtype']} " \
+                f"({self.ai_attack_info['fromx']}{self.ai_attack_info['fromy']}) " \
+                "attacking " \
+                f"{self.ai_attack_info['toclr']} {self.ai_attack_info['totype']} " \
+                f"({self.ai_attack_info['tox']}{self.ai_attack_info['toy']}) " \
+
+            self.aiPieceInfoText.setText(text)
+            self.aiPieceInfoText.show()
+            self.aiPieceInfoText.raise_()
+
+
         # roll dice animation
         self.rollDiceAnimation.setAlignment(Qt.AlignCenter)
         self.rollDiceAnimation = QLabel(self)
@@ -1116,9 +1170,10 @@ class BoardVis(QMainWindow):
         if ai_turn:
             okayTimer = QTimer(self)
             okayTimer.setSingleShot(True)
-            okayTimer.setInterval(2000)
+            okayTimer.setInterval(2500)
             okayTimer.timeout.connect(self.okayButtonClicked)
             okayTimer.start()
+            self.ai_attack_info = None
         else:
             self.okayButton.show()
             self.okayButton.raise_()
@@ -1269,6 +1324,8 @@ class BoardVis(QMainWindow):
         self.rollDiceAnimation.hide()
         self.resultCaptureText.hide()
         self.resultCaptureText.clear()
+        self.aiPieceInfoText.clear()
+        self.aiPieceInfoText.hide()
         self.okayButton.hide()
 
     def set_non_playables(self):
@@ -1337,15 +1394,15 @@ class BoardVis(QMainWindow):
                 if cur_p and cur_p != "0":
                         cur_p.setParent(None)
                 piece, corp_name = pieces_array[y][x]
-                color_name = ""
+                corp_color_name = ""
                 if corp_name:
                     corp_num = corp_name[-1]
-                    color_name = corp_to_color(int(corp_num))
+                    corp_color_name = corp_to_color(int(corp_num))
                 piece = piece_to_img_name(piece)
                 if not piece:
                     continue
                 piece_color = 'white' if piece[0]=='w' else 'black'
-                label = PieceVis(piece + color_name, x, y, color=piece_color, parent=self)
+                label = PieceVis(piece + corp_color_name, x, y, color=piece_color, parent=self)
                     # Set the image based on the array element.
                 label.resize(75, 75)
                 label.setScaledContents(True)
