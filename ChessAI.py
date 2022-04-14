@@ -3,7 +3,7 @@ import random
 from ChessGame import Game
 
 
-game = Game()
+# game = Game()
 
 class AIFunctions:
     def __init__(self, game: Game, color):
@@ -241,6 +241,12 @@ class AIFunctions:
         for item in self.board:
             for item2 in item:
                 if item2.piece:
+                    # if self.color == item2.piece.is_white():
+                    #     if (item2.piece.get_type() == 'King'):
+                    #         KingLocation = (y, x)
+                    #         print ('==========================================================')
+                    #         print('testing KingLocation', KingLocation ,'\n\n\n')
+
                     if self.color != item2.piece.is_white():
                         moveList = self.game.get_possible_moves_for_piece_at(x=y, y=x, ai_backdoor=True)
 
@@ -650,18 +656,16 @@ class AIFunctions:
                   'this turn')
 
 
-aiAssistWhite = AIFunctions(game, True)
-aiAssistBlack = AIFunctions(game, False)
+# aiAssistWhite = AIFunctions(game, True)
+# aiAssistBlack = AIFunctions(game, False)
 
 
-for num in range (100):
-   if not game.is_game_over():
-       if game.tracker.get_current_player():
-           aiAssistWhite.make_move()
-       else:
-           aiAssistBlack.make_move()
-   else:
-       print("Game Over!")
-       break
-
-    
+# for num in range (100):
+#    if not game.is_game_over():
+#        if game.tracker.get_current_player():
+#            aiAssistWhite.make_move()
+#        else:
+#            aiAssistBlack.make_move()
+#    else:
+#        print("Game Over!")
+#        break
