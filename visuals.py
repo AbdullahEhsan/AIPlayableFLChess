@@ -205,7 +205,7 @@ class PieceVis(QLabel):
         if drag_move:
             self.parent().setMoveStart(self.start)
             self.parent().move_end = self.end
-            self.parent().do_piece_move(self)
+            self.parent().do_piece_move(self, drag_move)
 
         if click_end:
             self.parent().move_end = self.end
@@ -461,7 +461,7 @@ class BoardVis(QMainWindow):
         theme = self.theme_menu.get_theme()
         self.set_theme(theme)
 
-    def do_piece_move(self, mvd_piece: PieceVis):
+    def do_piece_move(self, mvd_piece: PieceVis, dragged:bool=False):
         print("was called")
         piece = mvd_piece
         if not piece:
@@ -485,7 +485,7 @@ class BoardVis(QMainWindow):
             new_spot = board_to_screen(self.move_start[0], self.move_start[1], self.tileSize)
         print("moved piece: ", piece)
         # piece.move(new_spot[0], new_spot[1])
-        if len(new_spots)>1:
+        if len(new_spots)>1 and not dragged:
             new_spots.reverse()
 
             sbs_delay = QTimer(self)
@@ -561,7 +561,7 @@ class BoardVis(QMainWindow):
     def showBoard(self):
         # Initialize the board.
         self.setBoard()
-        self.showSideChoice()
+        self.showStartScreen()
         self.resize(self.boardSize + self.tableOption.width(), self.boardSize )
 
     def setBoard(self):
@@ -1219,7 +1219,7 @@ class BoardVis(QMainWindow):
         self.tableOption.setText("Current Player: " + ("White" if self.controller.tracker.get_current_player() else "Black"))
         self.moveIndicator.setText("Remaining Moves: " + str(self.controller.tracker.get_number_of_available_moves() ))
 
-    def showSideChoice(self):
+    def showStartScreen(self):
         self.startScreen.show()
         self.startScreen.raise_()
         self.welcomeText.show()
@@ -1292,7 +1292,7 @@ class BoardVis(QMainWindow):
         self.tableOption.hide()
         self.corpButton.hide()
         self.hidepauseBackground()
-        self.showSideChoice()
+        self.showStartScreen()
         self.remove_all_h()
         self.reset_movement_data()
 
