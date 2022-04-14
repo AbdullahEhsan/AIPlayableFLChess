@@ -344,7 +344,7 @@ class BoardVis(QMainWindow):
         self.blackButton = QRadioButton("Black side", self)
         self.humanButton = QRadioButton("Human", self)
         self.computerButton = QRadioButton("Computer", self)
-        self.AivAiButton = QRadioButton("Ai v Ai", self)
+        self.AivAiButton = QRadioButton("Computer vs. Computer", self)
         self.offhighlight = QRadioButton("Off", self)
         self.onhighlight = QRadioButton("On", self)
         self.medievalButton = QRadioButton("Medieval", self)
@@ -800,12 +800,12 @@ class BoardVis(QMainWindow):
         self.humanButton.adjustSize()
         self.computerButton.adjustSize()
 
+        self.ai_v_ai_grp = QButtonGroup(self)
 
-        self.opponent_group.addButton(self.AivAiButton, 3)
+        self.ai_v_ai_grp.addButton(self.AivAiButton, 1)
         self.__set_button(self.AivAiButton, 0.4)
-        self.AivAiButton.move(int((self.boardSize / 2) - (self.blackButton.width() / 2) - 100) + moveIntoSidePanel
-                              , int((self.boardSize / 2) - 10))
-
+        self.AivAiButton.move(int((self.boardSize / 2) - (self.blackButton.width() / 2) ) + moveIntoSidePanel+100
+                              , int((self.boardSize / 2) - 70))
         self.AivAiButton.setStyleSheet(radioButtonTextCSS)
         self.AivAiButton.adjustSize()
 
