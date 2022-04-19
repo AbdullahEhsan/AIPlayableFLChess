@@ -350,18 +350,19 @@ class BoardVis(QMainWindow):
         self.welcomeText = QLabel(self)
         self.startScreen = QLabel(self)
         self.optionScreen = QLabel(self)
-        self.teamText = QLabel(self)
-        self.opponentText = QLabel(self)
+        self.whiteTeamText = QLabel(self)
+        self.blackTeamText = QLabel(self)
         self.highlightText = QLabel(self)
         self.gameTypeText = QLabel(self)
 
         #set up the buttons
         self.startGameButton= QPushButton("Start game",self)
-        self.whiteButton = QRadioButton("White side", self)
-        self.blackButton = QRadioButton("Black side", self)
-        self.humanButton = QRadioButton("Human", self)
-        self.computerButton = QRadioButton("Computer", self)
-        self.AivAiButton = QRadioButton("Computer vs. Computer", self)
+
+        self.whiteHumanButton = QRadioButton("Human", self)
+        self.whiteAIButton = QRadioButton("Computer", self)
+        self.blackHumanButton = QRadioButton("Human", self)
+        self.blackAIButton = QRadioButton("Computer", self)
+
         self.offhighlight = QRadioButton("Off", self)
         self.onhighlight = QRadioButton("On", self)
         self.medievalButton = QRadioButton("Medieval", self)
@@ -440,9 +441,9 @@ class BoardVis(QMainWindow):
         # start screen
         self.welcomeText.setStyleSheet(alt_text_css if theme=='marble' else text_css)
 
-        self.teamText.setStyleSheet(text_css)
+        self.whiteTeamText.setStyleSheet(text_css)
         self.gameTypeText.setStyleSheet(text_css)
-        self.opponentText.setStyleSheet(text_css)
+        self.blackTeamText.setStyleSheet(text_css)
         self.highlightText.setStyleSheet(text_css)
 
         self.startGameButton.setStyleSheet(button_css)
@@ -714,7 +715,7 @@ class BoardVis(QMainWindow):
         self.optionScreen.setAlignment(Qt.AlignCenter)
         self.optionScreen.resize(self.boardSize / 1.5, self.boardSize / 2)
         self.optionScreen.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
-        self.optionScreen.move(int((self.boardSize / 2) - (self.whiteButton.width() / 2)) - 180 + moveIntoSidePanel
+        self.optionScreen.move(int((self.boardSize / 2) - (self.onhighlight.width() / 2)) - 180 + moveIntoSidePanel
                                , int((self.boardSize / 2) - 150))
         self.optionScreen.hide()
 
@@ -730,28 +731,28 @@ class BoardVis(QMainWindow):
         self.startGameButton.hide()
 
         #set up team text properties
-        self.teamText.setAlignment(Qt.AlignCenter)
-        self.teamText.setText("Team:")
-        self.teamText.resize(200, 100)
+        self.whiteTeamText.setAlignment(Qt.AlignCenter)
+        self.whiteTeamText.setText("White Player:")
+        self.whiteTeamText.resize(200, 100)
         font = QFont()
         font.setFamily('Arial')
-        font.setPixelSize(self.teamText.height() * 0.2)
-        self.teamText.setFont(font)
-        self.teamText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
+        font.setPixelSize(self.whiteTeamText.height() * 0.2)
+        self.whiteTeamText.setFont(font)
+        self.whiteTeamText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
                                   int((self.boardSize / 2) - 175))
-        self.teamText.hide()
+        self.whiteTeamText.hide()
 
         #set up opponent text properties
-        self.opponentText.setAlignment(Qt.AlignCenter)
-        self.opponentText.setText("Opponent: ")
-        self.opponentText.resize(200, 100)
+        self.blackTeamText.setAlignment(Qt.AlignCenter)
+        self.blackTeamText.setText("Black Player: ")
+        self.blackTeamText.resize(200, 100)
         font = QFont()
         font.setFamily('Arial')
-        font.setPixelSize(self.teamText.height() * 0.2)
-        self.opponentText.setFont(font)
-        self.opponentText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
+        font.setPixelSize(self.whiteTeamText.height() * 0.2)
+        self.blackTeamText.setFont(font)
+        self.blackTeamText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
                                int((self.boardSize / 2) - 95))
-        self.opponentText.hide()
+        self.blackTeamText.hide()
 
 
 
@@ -761,7 +762,7 @@ class BoardVis(QMainWindow):
         self.highlightText.resize(200, 100)
         font = QFont()
         font.setFamily('Arial')
-        font.setPixelSize(self.teamText.height() * 0.2)
+        font.setPixelSize(self.whiteTeamText.height() * 0.2)
         self.highlightText.setFont(font)
         self.highlightText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
                                 int((self.boardSize / 2) - 5))
@@ -773,7 +774,7 @@ class BoardVis(QMainWindow):
         self.gameTypeText.resize(200, 100)
         font = QFont()
         font.setFamily('Arial')
-        font.setPixelSize(self.teamText.height() * 0.2)
+        font.setPixelSize(self.whiteTeamText.height() * 0.2)
         self.gameTypeText.setFont(font)
         self.gameTypeText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
                                int((self.boardSize / 2) + 85))
@@ -782,53 +783,45 @@ class BoardVis(QMainWindow):
         radioButtonTextCSS = 'color: white; font-size: 15px'
 
         #set up white/black button properties
-        self.team_group = QButtonGroup()
+        self.whitegroup = QButtonGroup()
 
-        self.team_group.addButton(self.whiteButton)
-        self.__set_button(self.whiteButton, 0.4)
-        self.whiteButton.move(int((self.boardSize / 2) - (self.whiteButton.width() / 2)) + moveIntoSidePanel
+        self.whitegroup.addButton(self.whiteHumanButton)
+        self.__set_button(self.whiteHumanButton, 0.4)
+        self.whiteHumanButton.move(int((self.boardSize / 2) - (self.whiteHumanButton.width() / 2)) + moveIntoSidePanel
                               , int((self.boardSize / 2) - 130))
 
-
-        # Set up for black button properties
-        self.team_group.addButton(self.blackButton)
-        self.__set_button(self.blackButton, 0.4)
-        self.blackButton.move(int((self.boardSize / 2) - (self.blackButton.width() / 2)) + moveIntoSidePanel
+         # Set up for black button properties
+        self.whitegroup.addButton(self.whiteAIButton)
+        self.__set_button(self.whiteAIButton, 0.4)
+        self.whiteAIButton.move(int((self.boardSize / 2) - (self.whiteAIButton.width() / 2)) + moveIntoSidePanel
                               , int((self.boardSize / 2) - 100))
-        self.whiteButton.setChecked(True)
 
-        self.whiteButton.setStyleSheet(radioButtonTextCSS)
-        self.blackButton.setStyleSheet(radioButtonTextCSS)
-        self.whiteButton.adjustSize()
-        self.blackButton.adjustSize()
+        self.whiteHumanButton.setChecked(True)
+
+        self.whiteHumanButton.setStyleSheet(radioButtonTextCSS)
+        self.whiteAIButton.setStyleSheet(radioButtonTextCSS)
+        self.whiteHumanButton.adjustSize()
+        self.whiteAIButton.adjustSize()
 
         #set up human/computer button properties
-        self.opponent_group = QButtonGroup(self)
+        self.blackgroup = QButtonGroup(self)
 
-        self.opponent_group.addButton(self.humanButton, 1)
-        self.__set_button(self.humanButton, 0.4)
-        self.humanButton.move(int((self.boardSize / 2) - (self.blackButton.width() / 2)) + moveIntoSidePanel
+        self.blackgroup.addButton(self.blackHumanButton, 1)
+        self.__set_button(self.blackHumanButton, 0.4)
+        self.blackHumanButton.move(int((self.boardSize / 2) - (self.blackHumanButton.width() / 2)) + moveIntoSidePanel
                               , int((self.boardSize / 2) - 40))
 
-        self.opponent_group.addButton(self.computerButton, 2)
-        self.__set_button(self.computerButton, 0.4)
-        self.computerButton.move(int((self.boardSize / 2) - (self.blackButton.width() / 2)) + moveIntoSidePanel
+        self.blackgroup.addButton(self.blackAIButton, 2)
+        self.__set_button(self.blackAIButton, 0.4)
+        self.blackAIButton.move(int((self.boardSize / 2) - (self.blackAIButton.width() / 2)) + moveIntoSidePanel
                                  , int((self.boardSize / 2) - 10))
-        self.humanButton.setChecked(True)
 
-        self.humanButton.setStyleSheet(radioButtonTextCSS)
-        self.computerButton.setStyleSheet(radioButtonTextCSS)
-        self.humanButton.adjustSize()
-        self.computerButton.adjustSize()
+        self.blackHumanButton.setChecked(True)
 
-        self.ai_v_ai_grp = QButtonGroup(self)
-
-        self.ai_v_ai_grp.addButton(self.AivAiButton, 1)
-        self.__set_button(self.AivAiButton, 0.4)
-        self.AivAiButton.move(int((self.boardSize / 2) - (self.blackButton.width() / 2) ) + moveIntoSidePanel+100
-                              , int((self.boardSize / 2) - 70))
-        self.AivAiButton.setStyleSheet(radioButtonTextCSS)
-        self.AivAiButton.adjustSize()
+        self.blackHumanButton.setStyleSheet(radioButtonTextCSS)
+        self.blackAIButton.setStyleSheet(radioButtonTextCSS)
+        self.blackHumanButton.adjustSize()
+        self.blackAIButton.adjustSize()
 
         #set up highlight on/off button properties
         self.highlight_group = QButtonGroup(self)
@@ -925,14 +918,14 @@ class BoardVis(QMainWindow):
         ai_turn = True
         if game_over:
             return
-        if self.AivAiButton.isChecked():
+        if self.whiteAIButton.isChecked() and self.blackAIButton.isChecked():
             if self.controller.is_game_over():
                 ai_turn = False
                 self.handle_gameover()
                 return
             self.ai_player = self.ai_v_ai_players[self.controller.tracker.current_player]
         else:
-            if not self.computerButton.isChecked() or self.ai_turn_over():
+            if not self.ai_player or self.ai_turn_over():
                 ai_turn = False
                 return      # ai not selected, bail out of function
         self.ai_move_delay.start(self.ai_move_delay_ms)
@@ -1015,7 +1008,7 @@ class BoardVis(QMainWindow):
         if self.controller.is_game_over():  # special case for gameover
             self.handle_gameover()
             return True
-        return self.whiteButton.isChecked() == whites_turn    # the active color is the color the human chose, no longer computer's turn
+        return self.whiteHumanButton.isChecked() == whites_turn    # the active color is the color the human chose, no longer computer's turn
 
 
     def handle_gameover(self):
@@ -1043,27 +1036,9 @@ class BoardVis(QMainWindow):
         if self.__game_type == "Corp":
             self.corp_menu = CorpMenu(self)
 
-
         self._update_pieces()
         self.update_labels()
         self.update_captured_pieces()
-
-        if self.blackButton.isChecked():
-            self.blackButtonClicked()
-        elif self.whiteButton.isChecked():
-            self.whiteButtonClicked()
-
-        self.ai_player = None
-        self.ai_v_ai_players = []
-
-        if self.computerButton.isChecked():
-            self.ai_player = AIFunctions(self.controller, self.blackButton.isChecked())
-
-        # TODO: Handle once AI is enabled
-        # if self.humanButton.isChecked():
-        #     self.humanButtonClicked()
-        # elif self.computerButton.isChecked():
-        #     self.computerButtonClicked()
 
         if self.onhighlight.isChecked():
             self.h_mode = True
@@ -1076,15 +1051,28 @@ class BoardVis(QMainWindow):
         self.restartButton.show()
         self.endTurnButton.show()
 
-        if self.blackButton.isChecked() and not self.AivAiButton.isChecked():
-            self.make_AI_move()
+        self.controller.tracker.current_player = 1
 
-        if self.AivAiButton.isChecked():
+        self.ai_player = None
+        self.ai_v_ai_players = []
+
+        # whiteHuman v blackHuman default
+
+        if self.whiteAIButton.isChecked() and self.blackAIButton.isChecked():
+            # whiteAI v blackAI
             self.controller.tracker.current_player = 1
             ai_1 = AIFunctions(self.controller, 1)
             ai_2 = AIFunctions(self.controller, 0)
             self.ai_v_ai_players = [ai_2, ai_1]
             self.make_AI_move()
+        elif self.whiteHumanButton.isChecked() and self.blackAIButton.isChecked():
+            # whiteHuman v blackAI
+            self.ai_player = AIFunctions(self.controller, 0)
+        elif self.whiteAIButton.isChecked() and self.blackHumanButton.isChecked():
+            # whiteAI v blackHuman
+            self.ai_player = AIFunctions(self.controller, 1)
+            self.make_AI_move()
+
 
     def __rolldiceWork(self):
         moveIntoSidePanel = ((925-self.boardSize)/2)
@@ -1201,7 +1189,7 @@ class BoardVis(QMainWindow):
         self._update_pieces()
 
     def endTurnClicked(self):
-        if self.AivAiButton.isChecked():
+        if self.whiteAIButton.isChecked() and self.blackAIButton.isChecked():
             return
         self.controller.tracker.end_turn()
         self.ai_move_delay.stop()
@@ -1231,25 +1219,25 @@ class BoardVis(QMainWindow):
 
         self.optionScreen.show()
         self.optionScreen.raise_()
-        self.teamText.show()
-        self.teamText.raise_()
-        self.opponentText.show()
-        self.opponentText.raise_()
+        self.whiteTeamText.show()
+        self.whiteTeamText.raise_()
+        self.blackTeamText.show()
+        self.blackTeamText.raise_()
         self.highlightText.show()
         self.highlightText.raise_()
         self.gameTypeText.show()
         self.gameTypeText.raise_()
 
-        self.whiteButton.show()
-        self.whiteButton.raise_()
-        self.blackButton.show()
-        self.blackButton.raise_()
-        self.computerButton.show()
-        self.computerButton.raise_()
-        self.humanButton.show()
-        self.humanButton.raise_()
-        self.AivAiButton.show()
-        self.AivAiButton.raise_()
+        self.whiteHumanButton.show()
+        self.whiteHumanButton.raise_()
+        self.whiteAIButton.show()
+        self.whiteAIButton.raise_()
+
+        self.blackHumanButton.show()
+        self.blackHumanButton.raise_()
+        self.blackAIButton.show()
+        self.blackAIButton.raise_()
+
         self.offhighlight.show()
         self.offhighlight.raise_()
         self.onhighlight.show()
@@ -1266,14 +1254,16 @@ class BoardVis(QMainWindow):
         self.startScreen.hide()
         self.welcomeText.hide()
         self.options.hide()
-        self.whiteButton.hide()
-        self.blackButton.hide()
-        self.teamText.hide()
+
+        self.whiteHumanButton.hide()
+        self.whiteAIButton.hide()
+        self.blackHumanButton.hide()
+        self.blackAIButton.hide()
+
+        self.whiteTeamText.hide()
         self.optionScreen.hide()
-        self.opponentText.hide()
-        self.computerButton.hide()
-        self.humanButton.hide()
-        self.AivAiButton.hide()
+        self.blackTeamText.hide()
+
         self.offhighlight.hide()
         self.onhighlight.hide()
         self.medievalButton.hide()
@@ -1297,16 +1287,6 @@ class BoardVis(QMainWindow):
         self.showStartScreen()
         self.remove_all_h()
         self.reset_movement_data()
-
-    def whiteButtonClicked(self):
-        self.controller.tracker.current_player = 1
-        #self.player = 0
-        self.hideStartScreen()
-
-    def blackButtonClicked(self):
-        self.controller.tracker.current_player = 1
-        #the AI runsnings
-        self.hideStartScreen()
 
     def rollDiceScreen(self, attackSuccess:bool):
         self.attackSuccess = attackSuccess
