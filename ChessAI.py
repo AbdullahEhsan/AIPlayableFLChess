@@ -37,7 +37,7 @@ class AIFunctions:
     def updateBoard(self):
         self.board = self.game._get_board()
 
-    def __get_position_of_piece(self, piece_name: str, object_return=False):
+    def __get_position_of_piece(self, piece_name: str):
         if len(piece_name) == 0 or piece_name[0] not in ('w', 'b'):
             print('empty or not w or not b')
             return (-1, -1)
@@ -61,57 +61,43 @@ class AIFunctions:
             for x, spot in enumerate(row):
                 pc, corp = spot
                 if pc == piece_name:
-                    if(object_return):
-                        return pc
-                    else:
-                        return (x, y)
+                    return (x, y)
         print('piece not on board')
-        if(object_return):
-            return None
-        else:
-            return (-1, -1)
+        return (-1, -1)
 
-    #attempts to balance corps on the AI's side
-    #in such a way that the king's corp is always the largest
     def corpBalance(self):
         lcore = 0
         rcore = 0
         kcore = 0
+        pawnString = ""
+        rookString = ""
         for item in self.board:
             for item2 in item:
                 if item2.piece:
                     if self.color == item2.piece.is_white():
                         if item2.piece.get_corp() == 'corpW1' or item2.piece.get_corp() == 'corpB1':
-                            lcore = lcore + self.pieceweight(item2.piece)
-                        elif item2.piece.get_corp() == 'corpW2' or item2.piece.get_corp() == 'corpB2':
                             kcore = kcore + self.pieceweight(item2.piece)
+                        elif item2.piece.get_corp() == 'corpW2' or item2.piece.get_corp() == 'corpB2':
+                            lcore = lcore + self.pieceweight(item2.piece)
                         elif item2.piece.get_corp() == 'corpW2'  or item2.piece.get_corp() == 'corpB3':
                             rcore = rcore + self.pieceweight(item2.piece)
 
-        if(self.color == True):
-            rook1 = 'wR1'
-            rook2 = 'wR2'
-        else:
-            rook1 = 'bR1'
-            rook2 = 'bR2'
-
         #checks if a corp has more than the king
-        #if so, the king takes a piece(rook) from that corp
+        #if so, the king takes a piece from that corp
         if kcore - rcore > kcore - lcore:
             print(lcore - kcore)
             if(lcore - kcore>=2):
-                print("Attempting to take a rook from lcore")
-                piece = self.__get_position_of_piece(rook1, object_return=True)
-                if(piece != None):
-                    return piece, (lcore-kcore)
-        if kcore - rcore < kcore - lcore:
+                print("taking rook from lcore")
+                # TODO: get location of designated piece(ensuring its still in play)
+                #  and return the piece as an object along with the corp it should be changed to
+            else:
+                print("taking pawn from lcore")
+        elif kcore - rcore < kcore - lcore:
             print(rcore - kcore)
             if (rcore - kcore >= 2):
-                print("Attempting to take a rook from rcore")
-                piece = self.__get_position_of_piece(rook2, object_return=True)
-                if (piece != None):
-                    return piece, (rcore - kcore)
-
+                print("taking rook from rcore")
+            else:
+                print("taking pawn from rcore")
 
 
 
@@ -119,8 +105,7 @@ class AIFunctions:
     #lcore 7
     #kcore 10
     #idea is to balance corps out. IE, if the kings corp loses
-    #a power piece, the king will take a piece from the bishops
-    #given the bishop's corp cannot make an excellent move
+    #a power piece, the bishops will
     def pieceweight(self, piece):
         if piece.get_type() == 'Pawn':
             return 1
@@ -208,9 +193,9 @@ class AIFunctions:
                 return 2
         elif piece.get_type() == 'Rook':
             if type == 'Pawn' or type == 'Bishop' or type == 'Rook':
-                return 4
-            else:
                 return 6
+            else:
+                return 10
         elif piece.get_type() == 'Bishop':
             if type == 'Pawn':
                 return 8
@@ -220,9 +205,9 @@ class AIFunctions:
                 return 4
         elif piece.get_type() == 'Knight':
             if type == 'Pawn':
-                return 10
+                return 6
             else:
-                return 4
+                return 8
         elif piece.get_type() == 'Queen':
             if type == 'Rook':
                 return 4
@@ -234,9 +219,9 @@ class AIFunctions:
             if type == 'Rook':
                 return 4
             if type == 'Pawn':
-                return 12
-            else:
                 return 6
+            else:
+                return 8
 
     def genHostileMap(self):
         x = 0
@@ -344,34 +329,34 @@ class AIFunctions:
                                 heatmap[m][l] += 1
                                 if player == "white":
                                     if (m - x == 2 or x - m == 2 or y - l == 2):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 2
                                 if player == "black":
                                     if (m - x == 2 or x - m == 2 or l - y == 2):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 2
                             elif (m - x == 3 or x - m == 3 or y - l == 3 or l - y == 3):
                                 heatmap[m][l] += 2
                                 if player == "white":
                                     if (m - x == 3 or x - m == 3 or y - l == 3):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 3
                                 if player == "black":
                                     if (m - x == 3 or x - m == 3 or l - y == 3):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 3
                             elif (m - x == 4 or x - m == 4 or y - l == 4 or l - y == 4):
-                                heatmap[m][l] += 2
+                                heatmap[m][l] += 3
                                 if player == "white":
                                     if (m - x == 4 or x - m == 4 or y - l == 4):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 4
                                 if player == "black":
                                     if (m - x == 2 or x - m == 2 or l - y == 2):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 4
                             elif (m - x == 5 or x - m == 5 or y - l == 5 or l - y == 5):
                                 heatmap[m][l] += 3
                                 if player == "white":
                                     if (m - x == 5 or x - m == 5 or y - l == 5):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 4
                                 if player == "black":
                                     if (m - x == 5 or x - m == 5 or l - y == 5):
-                                        heatmap[m][l] += 1
+                                        heatmap[m][l] += 4
                             heatmap[m][l] += spotVal - self.hostilemap[m][l] + self.kingOrderGrid[m][l]
                             if item2.piece.get_type() != 'King':
                                 hosval = self.hostilemap[m][l] % 1000
@@ -669,3 +654,18 @@ class AIFunctions:
             colour = "white" if self.color else "black"
             print(colour, "team had", self.total_success_moves, 'successful moves out of', self.total_moves_attempted,
                   'this turn')
+
+
+# aiAssistWhite = AIFunctions(game, True)
+# aiAssistBlack = AIFunctions(game, False)
+
+
+# for num in range (100):
+#    if not game.is_game_over():
+#        if game.tracker.get_current_player():
+#            aiAssistWhite.make_move()
+#        else:
+#            aiAssistBlack.make_move()
+#    else:
+#        print("Game Over!")
+#        break
