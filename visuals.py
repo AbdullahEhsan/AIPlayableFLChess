@@ -294,7 +294,7 @@ class BoardVis(QMainWindow):
         #This block sets up the window properties
         #self.setGeometry(500, 200, 300, 300)
         self.setFixedSize(925, 675)
-        self.setWindowTitle("Chess Board")
+        self.setWindowTitle("AIFLChess")
         self.highlighted = []
         self.corp_menu = CorpMenu(self)
 
