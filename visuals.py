@@ -867,7 +867,89 @@ class BoardVis(QMainWindow):
             "white": [],
             "black": []
         }
+        
+        # set up the win congratulation screen properties
+        self.winCon = QLabel(self)
+        self.winCon.setAlignment(Qt.AlignCenter)
+        self.winCon.resize(925, 675)
+        self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
+        self.winCon.move(0, 0)
+        self.winCon.hide()
+    
+    def congratulations(self):
+        # set up the win congratulation screen properties
+        self.winCon = QLabel(self)
+        self.winCon.setAlignment(Qt.AlignCenter)
+        self.winCon.resize(925, 675)
+        self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
+        self.winCon.move(0, 0)
+        self.winCon.show()
 
+        self.conpic = QLabel(self)
+        pic = QMovie('./picture/cr1.gif')
+        self.conpic.setMovie(pic)
+        self.conpic.resize(300, 300)
+        self.conpic.move(0, 200)
+        pic.start()
+        self.conpic.show()
+
+        self.conpic1 = QLabel(self)
+        pic1 = QMovie('./picture/cr2.gif')
+        self.conpic1.setMovie(pic1)
+        self.conpic1.resize(500, 300)
+        self.conpic1.move(300, 50)
+        pic1.start()
+        self.conpic1.show()
+
+        self.conpic2 = QLabel(self)
+        pic2 = QMovie('./picture/cr3.gif')
+        self.conpic2.setMovie(pic2)
+        self.conpic2.resize(300, 300)
+        self.conpic2.move(600, 300)
+        pic2.start()
+        self.conpic2.show()
+
+        # set up the win congratulation screen text properties
+        self.winConText = QLabel(self)
+        self.winConText.setAlignment(Qt.AlignCenter)
+        self.winConText.setText("Congratulations! "
+                                "\nWinner: " +
+                                    ("White" if self.controller.tracker.get_current_player() else "Black") +
+                                    " Team!")
+        self.winConText.setStyleSheet('color: red; font-weight: bold')
+        self.winConText.setFont(QFont('Arial', 30))
+        self.winConText.resize(925, 675)
+        self.winConText.move(0, -100)
+        self.winConText.show()
+
+        # set quit button
+        self.quitButton = QPushButton('Quit', self)
+        self.__set_button(self.quitButton, 0.9)
+        self.quitButton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 200
+                            , int((self.boardSize / 2) + 250))
+        self.quitButton.clicked.connect(QCoreApplication.instance().quit)
+        self.quitButton.show()
+        self.quitButton.raise_()
+
+        # set restart button
+        self.restartton = QPushButton('Restart', self)
+        self.__set_button(self.restartton, 0.9)
+        self.restartton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 80
+                            , int((self.boardSize / 2) + 250))
+        self.restartton.clicked.connect(self.returnToStartScreen2)
+        self.restartton.show()
+        self.restartton.raise_()
+        
+    def returnToStartScreen2(self):
+        self.restartton.hide()
+        self.winConText.hide()
+        self.quitButton.hide()
+        self.winCon.hide()
+        self.conpic.hide()
+        self.conpic1.hide()
+        self.conpic2.hide()
+        self.returnToStartScreen()
+        
     def update_captured_pieces(self):
         self.delete_captured_pieces()
         self.updated_captured_by('black')
@@ -1176,6 +1258,12 @@ class BoardVis(QMainWindow):
         self.hidepauseBackground()
         self.update_captured_pieces()
         self.make_AI_move() #TODO: find place for this after update pieces is fixed
+        
+        #set celebrate action
+        if self.controller.is_game_over():
+            global game_over
+            game_over = True
+            self.congratulations()
 
     def __set_button(self, button: QPushButton, scale):
         font = QFont()
