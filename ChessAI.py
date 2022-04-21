@@ -37,7 +37,7 @@ class AIFunctions:
     def updateBoard(self):
         self.board = self.game._get_board()
 
-    def __get_position_of_piece(self, piece_name: str):
+    def __get_position_of_piece(self, piece_name: str, object_return=False):
         if len(piece_name) == 0 or piece_name[0] not in ('w', 'b'):
             print('empty or not w or not b')
             return (-1, -1)
@@ -61,43 +61,57 @@ class AIFunctions:
             for x, spot in enumerate(row):
                 pc, corp = spot
                 if pc == piece_name:
-                    return (x, y)
+                    if(object_return):
+                        return pc
+                    else:
+                        return (x, y)
         print('piece not on board')
-        return (-1, -1)
+        if(object_return):
+            return None
+        else:
+            return (-1, -1)
 
+    #attempts to balance corps on the AI's side
+    #in such a way that the king's corp is always the largest
     def corpBalance(self):
         lcore = 0
         rcore = 0
         kcore = 0
-        pawnString = ""
-        rookString = ""
         for item in self.board:
             for item2 in item:
                 if item2.piece:
                     if self.color == item2.piece.is_white():
                         if item2.piece.get_corp() == 'corpW1' or item2.piece.get_corp() == 'corpB1':
-                            kcore = kcore + self.pieceweight(item2.piece)
-                        elif item2.piece.get_corp() == 'corpW2' or item2.piece.get_corp() == 'corpB2':
                             lcore = lcore + self.pieceweight(item2.piece)
+                        elif item2.piece.get_corp() == 'corpW2' or item2.piece.get_corp() == 'corpB2':
+                            kcore = kcore + self.pieceweight(item2.piece)
                         elif item2.piece.get_corp() == 'corpW2'  or item2.piece.get_corp() == 'corpB3':
                             rcore = rcore + self.pieceweight(item2.piece)
 
+        if(self.color == True):
+            rook1 = 'wR1'
+            rook2 = 'wR2'
+        else:
+            rook1 = 'bR1'
+            rook2 = 'bR2'
+
         #checks if a corp has more than the king
-        #if so, the king takes a piece from that corp
+        #if so, the king takes a piece(rook) from that corp
         if kcore - rcore > kcore - lcore:
             print(lcore - kcore)
             if(lcore - kcore>=2):
-                print("taking rook from lcore")
-                # TODO: get location of designated piece(ensuring its still in play)
-                #  and return the piece as an object along with the corp it should be changed to
-            else:
-                print("taking pawn from lcore")
-        elif kcore - rcore < kcore - lcore:
+                print("Attempting to take a rook from lcore")
+                piece = self.__get_position_of_piece(rook1, object_return=True)
+                if(piece != None):
+                    return piece, (lcore-kcore)
+        if kcore - rcore < kcore - lcore:
             print(rcore - kcore)
             if (rcore - kcore >= 2):
-                print("taking rook from rcore")
-            else:
-                print("taking pawn from rcore")
+                print("Attempting to take a rook from rcore")
+                piece = self.__get_position_of_piece(rook2, object_return=True)
+                if (piece != None):
+                    return piece, (rcore - kcore)
+
 
 
 
@@ -105,7 +119,8 @@ class AIFunctions:
     #lcore 7
     #kcore 10
     #idea is to balance corps out. IE, if the kings corp loses
-    #a power piece, the bishops will
+    #a power piece, the king will take a piece from the bishops
+    #given the bishop's corp cannot make an excellent move
     def pieceweight(self, piece):
         if piece.get_type() == 'Pawn':
             return 1
@@ -654,19 +669,3 @@ class AIFunctions:
             colour = "white" if self.color else "black"
             print(colour, "team had", self.total_success_moves, 'successful moves out of', self.total_moves_attempted,
                   'this turn')
-
-
-# aiAssistWhite = AIFunctions(game, True)
-# aiAssistBlack = AIFunctions(game, False)
-
-
-# for num in range (100):
-#    if not game.is_game_over():
-#        if game.tracker.get_current_player():
-#            aiAssistWhite.make_move()
-#        else:
-#            aiAssistBlack.make_move()
-#    else:
-#        print("Game Over!")
-#        break
-
