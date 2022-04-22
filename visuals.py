@@ -294,12 +294,14 @@ class BoardVis(QMainWindow):
         #This block sets up the window properties
         #self.setGeometry(500, 200, 300, 300)
         self.setFixedSize(925, 675)
+        self.setWindowIcon(QIcon('./picture/chessIcon.png'))
         self.setWindowTitle("AIFLChess")
         self.highlighted = []
         self.corp_menu = CorpMenu(self)
 
         self.theme_menu = ThemeMenu(400,400, self)
         self.corner_tile = None
+        self.theme_menu.move(150, 200)
 
         # buttons:
         #displays theme menu
