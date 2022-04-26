@@ -1,7 +1,7 @@
 from math import floor
 from typing import Tuple
 from xmlrpc.client import Boolean
-from PyQt5.QtCore import Qt, QPoint, QSize, QTimer
+from PyQt5.QtCore import Qt, QPoint, QSize, QTimer, QCoreApplication
 from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, QGridLayout, \
     QComboBox, QRadioButton, QButtonGroup
 from PyQt5.QtGui import QPixmap, QMouseEvent, QFont, QMovie, QIcon
