@@ -627,6 +627,9 @@ class BoardVis(QMainWindow):
         self.wCapturedFrame.setGeometry(int(self.boardSize) - 10,
                                       420,
                                       200, 140)
+        self.wCapLayout = QVBoxLayout()            
+        self.wCapLayout.addWidget(QWidget())                   
+        self.wCapturedFrame.setLayout(self.wCapLayout)
 
         # Create black pieces captured
         self.bCapturedText.setText("CAPTURED BY BLACK")
@@ -647,6 +650,9 @@ class BoardVis(QMainWindow):
         self.bCapturedFrame.setGeometry(int(self.boardSize) - 10,
                                         125,
                                         200, 140)
+        self.bCapLayout = QVBoxLayout()
+        self.bCapLayout.addWidget(QWidget())
+        self.bCapturedFrame.setLayout(self.bCapLayout)
 
         if self.__game_type != "Corp":
             self.corpButton.hide()
@@ -869,12 +875,42 @@ class BoardVis(QMainWindow):
         }
 
     def update_captured_pieces(self):
-        self.delete_captured_pieces()
-        self.updated_captured_by('black')
-        self.updated_captured_by('white')
-        self.show_captured_pieces()
+        # grab new list of captured piece labels
+        wCapLabels = [item[0] for item in self.controller.get_pieces_captured_by("white")]
+        bCapLabels = [item[0] for item in self.controller.get_pieces_captured_by("black")]    
 
-    def updated_captured_by(self, color:str):
+        # create updated capture boxes with new lists
+        white = PieceGroup(wCapLabels, 5, 0, 25)
+        black = PieceGroup(bCapLabels, 5, 0, 25)
+
+        #store these new capture groups
+        self.captured_by["white"] = white
+        self.captured_by["black"] = black
+        
+        # check if the captured frames have layouts
+        current_wBox = self.wCapLayout.itemAt(0).widget()
+        current_bBox = self.bCapLayout.itemAt(0).widget()
+        if current_wBox and current_bBox:
+            print("has")
+            self.wCapLayout.replaceWidget(current_wBox, white)
+            current_wBox.setParent(None)
+            self.bCapLayout.replaceWidget(current_bBox, black)
+            current_bBox.setParent(None)
+        else:
+            print("doesnt")
+            self.wCapLayout.addWidget(white)
+            self.bCapLayout.addWidget(black)
+        
+        # current_group = self.wCapturedFrame.layout.itemAt(0).widget()
+        # if not current_group:
+
+        # self.col_layouts[i-1].replaceWidget(current_group, new_piece_group)
+        # current_group.setParent(None)
+
+
+
+
+    """ def updated_captured_by(self, color:str):
         if color == 'white':
             starting = 425
         elif color == 'black':
@@ -901,12 +937,9 @@ class BoardVis(QMainWindow):
                     starting + (offset*int(i/5))
             )
             self.captured_by[color].append(captured_pc)
-            # setattr(self, "wCapturedPic{}".format(i), self.wCapturedPic)
+            # setattr(self, "wCapturedPic{}".format(i), self.wCapturedPic) """
 
-    def show_captured_pieces(self):
-        for team in self.captured_by.values():
-            for captured in team:
-                captured.show()
+
 
     def delete_captured_pieces(self):
         for team in self.captured_by.values():
@@ -1396,31 +1429,38 @@ class BoardVis(QMainWindow):
         pass
 
 class PieceGroup(QWidget):
-    def __init__(self, labels, corp_num):
+    def __init__(self, labels, items_per_row, corp_num, label_size):
         super(PieceGroup, self).__init__()
         self.corp_color = corp_to_color(corp_num)
+        self.row_items = items_per_row
         self.labels = labels
-        self.create_group()
+        self.create_group(label_size)
     # Changed layout mode to grid
 
-    def create_group(self):
+    def create_group(self, size):
+        
         layout = QGridLayout()
-        items_per_row = 3
-        num_rows = len(self.labels) / items_per_row
+        num_rows = len(self.labels) / self.row_items
         for i in range(floor(num_rows) + 1):
             if len(self.labels) <= 0:
                 self.setLayout(layout)
                 return
-            elif len(self.labels) >= items_per_row:
-                cur_row_items = items_per_row
+            elif len(self.labels) >= self.row_items:
+                cur_row_items = self.row_items
             else:
                 cur_row_items = len(self.labels)
             for j in range(cur_row_items):
                 piece_name = self.labels.pop()
                 label_name = piece_to_img_name(piece_name)
-                label = corpVis(label_name + self.corp_color, piece_name, 50)
+                label = corpVis(label_name + self.corp_color, piece_name, size)
                 layout.addWidget(label, i, j)
+    
+
         self.setLayout(layout)
+
+    def custom_size(self, x_size, y_size):
+        self.setFixedSize(x_size, y_size)
+
 
 class Deleg_Label(QWidget):
     def __init__(self, corp_data):
@@ -1482,6 +1522,7 @@ class Deleg_Label(QWidget):
             self.piece_opt.addItems(self.corp_data[self.corp_opt.currentText()])    # true is Recall
         else:
             self.piece_opt.addItems(self.corp_data[self.get_king_corp()])
+
 
 class LeaderBox(QWidget):
     def __init__(self, leader, corp):
@@ -1577,7 +1618,7 @@ class CorpMenu(QWidget):
         col = QVBoxLayout()
         self.col_layouts.append(col)
         col.addWidget(leader_box)
-        col.addWidget(PieceGroup(group, num))
+        col.addWidget(PieceGroup(group,3,  num, 50))
         col.setSpacing(0)
         col.setContentsMargins(10,0,10,0)
         col_frame = QFrame()
@@ -1608,7 +1649,7 @@ class CorpMenu(QWidget):
     def update_group(self, i):
         self.update_data()
         group = self.corps_ref[i]['commanding']
-        new_piece_group = PieceGroup(group, i)
+        new_piece_group = PieceGroup(group, 3, i, 50)
         current_group = self.col_layouts[i-1].itemAt(self.col_layouts[i-1].count() - 1).widget()
         self.col_layouts[i-1].replaceWidget(current_group, new_piece_group)
         current_group.setParent(None)
