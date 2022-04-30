@@ -13,6 +13,9 @@ class Piece:
     def set_killed(self):
         self.killed = True
 
+    def get_killed(self):
+        return self.killed
+
     def is_white(self):
         return self.__white
 
