@@ -8,6 +8,8 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     os.chdir(sys._MEIPASS)
 
 def main():
+    os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--enable-logging --log-level=3"
+    
     app = QApplication(sys.argv)
     window = BoardVis()
     window.show()

@@ -1827,9 +1827,14 @@ class ThemeMenu(QWidget):
         return theme
 
 class displayRules(QWebEngineView):
+    class WebEnginePage(QWebEnginePage):
+        def javaScriptConsoleMessage(self, level, msg, line, sourceID):
+            pass
+
     def __init__(self):
         super(displayRules, self).__init__()
         self.resize(600, 600)
+        self.setPage(self.WebEnginePage(self))
         self.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, True)
         self.load(QUrl.fromLocalFile(QDir.current().filePath('FL-Chess__DistAI_V5d.pdf')))
