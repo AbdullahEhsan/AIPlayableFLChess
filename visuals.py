@@ -1,10 +1,11 @@
 from math import floor
 from typing import Tuple
 from xmlrpc.client import Boolean
-from PyQt5.QtCore import Qt, QPoint, QSize, QTimer, QCoreApplication
+from PyQt5.QtCore import Qt, QPoint, QSize, QTimer, QCoreApplication, QDir, QUrl
 from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, QGridLayout, \
     QComboBox, QRadioButton, QButtonGroup
 from PyQt5.QtGui import QPixmap, QMouseEvent, QFont, QMovie, QIcon
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings, QWebEnginePage
 from ChessAI import AIFunctions
 
 from ChessGame import Game as chess_game
@@ -299,6 +300,9 @@ class BoardVis(QMainWindow):
         self.highlighted = []
         self.corp_menu = CorpMenu(self)
 
+        self.tileSize = 75
+        self.boardSize = self.tileSize * 9.5
+
         self.theme_menu = ThemeMenu(400,400, self)
         self.corner_tile = None
         self.theme_menu.move(150, 200)
@@ -314,6 +318,7 @@ class BoardVis(QMainWindow):
         self.options.setIconSize(QSize(50,50))
         self.options.clicked.connect(self.theme_menu.show)
 
+
         # This button allow you can stop your turn
         self.endTurnButton = QPushButton("End Turn", self)
 
@@ -322,6 +327,10 @@ class BoardVis(QMainWindow):
 
         # choose highlight mode on/off
         self.corpButton = QPushButton("Manage Corps", self)
+
+        # This button can display the rules
+        self.helperButton = QPushButton("i", self)
+        self.show_the_rules = displayRules()
 
         self.tableOption = QLabel(self)
 
@@ -522,6 +531,7 @@ class BoardVis(QMainWindow):
         self.move_end = None
 
     def closeEvent(self,event):
+        self.show_the_rules.close()
         self.corp_menu.close()
         self.theme_menu.close()
         event.accept()
@@ -568,7 +578,6 @@ class BoardVis(QMainWindow):
         self.resize(self.boardSize + self.tableOption.width(), self.boardSize )
 
     def setBoard(self):
-        self.tileSize = 75
         self.boardSize = self.tileSize * 9.5
 
         #get data from controller and display it
@@ -629,8 +638,8 @@ class BoardVis(QMainWindow):
         self.wCapturedFrame.setGeometry(int(self.boardSize) - 10,
                                       420,
                                       200, 140)
-        self.wCapLayout = QVBoxLayout()            
-        self.wCapLayout.addWidget(QWidget())                   
+        self.wCapLayout = QVBoxLayout()
+        self.wCapLayout.addWidget(QWidget())
         self.wCapturedFrame.setLayout(self.wCapLayout)
 
         # Create black pieces captured
@@ -669,7 +678,6 @@ class BoardVis(QMainWindow):
         self.endTurnButton.hide()
 
     #Create restart button properties
-
         self.__set_button(self.restartButton, 0.7)
         self.restartButton.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2))-50,
                              int(self.boardSize / 2 + 300) - (self.restartButton.height() * 0.5)-20)
@@ -678,13 +686,35 @@ class BoardVis(QMainWindow):
         self.restartButton.clicked.connect(self.returnToStartScreen)
         self.restartButton.hide()
 
+        # create properties for the helper button
+        self.helperButton.clicked.connect(lambda: self.show_the_rules.show())
+        self.helperButton.move(self.tileSize/6, self.tileSize/6)
+        self.helperButton.resize(self.tileSize*2/3, self.tileSize*2/3)
+        self.helperButton.setStyleSheet('''
+            QPushButton {
+                font-family: "Times New Roman";
+                font-size: 25px;
+                background-color: rgb(0, 204, 204);
+                color: black;
+                border: 0.1em solid #000000;
+                border-radius: 25px;
+            }
+            QPushButton:hover {
+                background-color: black;
+                color: rgb(0, 204, 204);
+                border-color: rgb(0, 204, 204);
+            }
+            ''')
+        self.helperButton.show()
+        self.helperButton.raise_()
+
         # Create StartScreen properties
         self.startScreen.setAlignment(Qt.AlignCenter)
-        self.startScreen.resize(925, 675)
+        self.startScreen.resize(self.width(), self.height())
         self.startScreen.setStyleSheet("background-image: url(./picture/defaultChessSplash.png);")
         self.startScreen.move(0, 0)
 
-        moveIntoSidePanel = ((925-self.boardSize)/2)
+        moveIntoSidePanel = ((self.width()-self.boardSize)/2)
 
         # Set up choose side text properties
         self.welcomeText.setAlignment(Qt.AlignCenter)
@@ -699,10 +729,11 @@ class BoardVis(QMainWindow):
                                  int((self.boardSize / 2) - 300))
         self.welcomeText.hide()
 
+        self.options.move(self.tileSize/6, self.tileSize/6)
 
         # Create start screen properties
         self.pauseBackground.setAlignment(Qt.AlignCenter)
-        self.pauseBackground.resize(925, 675)
+        self.pauseBackground.resize(self.width(), self.height())
         self.pauseBackground.setStyleSheet('background-color: black')
         self.pauseBackground.setStyleSheet("background-image: url(./picture/defaultChessSplash.png);")
         self.pauseBackground.move(0, 0)
@@ -875,7 +906,7 @@ class BoardVis(QMainWindow):
             "white": [],
             "black": []
         }
-        
+
         # set up the win congratulation screen properties
         self.winCon = QLabel(self)
         self.winCon.setAlignment(Qt.AlignCenter)
@@ -883,7 +914,7 @@ class BoardVis(QMainWindow):
         self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
         self.winCon.move(0, 0)
         self.winCon.hide()
-    
+
     def congratulations(self):
         # set up the win congratulation screen properties
         self.winCon = QLabel(self)
@@ -947,7 +978,7 @@ class BoardVis(QMainWindow):
         self.restartton.clicked.connect(self.returnToStartScreen2)
         self.restartton.show()
         self.restartton.raise_()
-        
+
     def returnToStartScreen2(self):
         self.restartton.hide()
         self.winConText.hide()
@@ -957,11 +988,11 @@ class BoardVis(QMainWindow):
         self.conpic1.hide()
         self.conpic2.hide()
         self.returnToStartScreen()
-        
+
     def update_captured_pieces(self):
         # grab new list of captured piece labels
         wCapLabels = [item[0] for item in self.controller.get_pieces_captured_by("white")]
-        bCapLabels = [item[0] for item in self.controller.get_pieces_captured_by("black")]    
+        bCapLabels = [item[0] for item in self.controller.get_pieces_captured_by("black")]
 
         # create updated capture boxes with new lists
         white = PieceGroup(wCapLabels, 5, 0, 25)
@@ -970,7 +1001,7 @@ class BoardVis(QMainWindow):
         #store these new capture groups
         self.captured_by["white"] = white
         self.captured_by["black"] = black
-        
+
         # check if the captured frames have layouts
         current_wBox = self.wCapLayout.itemAt(0).widget()
         current_bBox = self.bCapLayout.itemAt(0).widget()
@@ -984,7 +1015,7 @@ class BoardVis(QMainWindow):
             print("doesnt")
             self.wCapLayout.addWidget(white)
             self.bCapLayout.addWidget(black)
-        
+
         # current_group = self.wCapturedFrame.layout.itemAt(0).widget()
         # if not current_group:
 
@@ -1167,6 +1198,8 @@ class BoardVis(QMainWindow):
         self.moveIndicator.show()
         self.restartButton.show()
         self.endTurnButton.show()
+        self.helperButton.show()
+        self.helperButton.raise_()
 
         self.controller.tracker.current_player = 1
 
@@ -1192,7 +1225,7 @@ class BoardVis(QMainWindow):
 
 
     def __rolldiceWork(self):
-        moveIntoSidePanel = ((925-self.boardSize)/2)
+        moveIntoSidePanel = ((self.width()-self.boardSize)/2)
         # Set up roll dice text properties
         self.rollText.setAlignment(Qt.AlignCenter)
         self.rollText.setText("Rolling Dice...")
@@ -1244,7 +1277,7 @@ class BoardVis(QMainWindow):
         self.rollDiceAnimation.hide()
 
     def __roll_dice(self):
-        moveIntoSidePanel = ((925-self.boardSize)/2)
+        moveIntoSidePanel = ((self.width()-self.boardSize)/2)
         # Set up capture result text properties
         self.rollText.hide()
         self.resultCaptureText.setAlignment(Qt.AlignCenter)
@@ -1293,7 +1326,7 @@ class BoardVis(QMainWindow):
         self.hidepauseBackground()
         self.update_captured_pieces()
         self.make_AI_move() #TODO: find place for this after update pieces is fixed
-        
+
         #set celebrate action
         if self.controller.is_game_over():
             global game_over
@@ -1406,6 +1439,7 @@ class BoardVis(QMainWindow):
         self.moveIndicator.hide()
         self.tableOption.hide()
         self.corpButton.hide()
+        self.helperButton.hide()
         self.hidepauseBackground()
         self.showStartScreen()
         self.remove_all_h()
@@ -1528,7 +1562,7 @@ class PieceGroup(QWidget):
     # Changed layout mode to grid
 
     def create_group(self, size):
-        
+
         layout = QGridLayout()
         num_rows = len(self.labels) / self.row_items
         for i in range(floor(num_rows) + 1):
@@ -1544,7 +1578,7 @@ class PieceGroup(QWidget):
                 label_name = piece_to_img_name(piece_name)
                 label = corpVis(label_name + self.corp_color, piece_name, size)
                 layout.addWidget(label, i, j)
-    
+
 
         self.setLayout(layout)
 
@@ -1791,3 +1825,11 @@ class ThemeMenu(QWidget):
         theme = ThemeField(name, img)
         theme.set_click_func(self.set_theme)
         return theme
+
+class displayRules(QWebEngineView):
+    def __init__(self):
+        super(displayRules, self).__init__()
+        self.resize(600, 600)
+        self.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, True)
+        self.load(QUrl.fromLocalFile(QDir.current().filePath('FL-Chess__DistAI_V5d.pdf')))
