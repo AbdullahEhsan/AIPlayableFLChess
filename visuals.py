@@ -446,6 +446,7 @@ class BoardVis(QMainWindow):
                 border-color: {color};
             }}
             '''
+
         text_css = f'font-weight: bold; color: {color}'
         alt_text_css = 'font-weight: bold; color: rgb(10, 110, 80)'
 
@@ -465,6 +466,22 @@ class BoardVis(QMainWindow):
         self.aiPieceInfoText.setStyleSheet(text_css+';background-color: rgba(0, 0, 0, 0.8)')
 
         self.okayButton.setStyleSheet(button_css)
+
+        self.helperButton.setStyleSheet(f'''
+            QPushButton {{
+                font-family: "Times New Roman";
+                font-size: 25px;
+                background-color: {color};
+                color: black;
+                border: 0.1em solid #000000;
+                border-radius: 25px;
+            }}
+            QPushButton:hover {{
+                background-color: black;
+                color: {color};
+                border-color: {color};
+            }}
+            ''')
 
         # board
         self.set_non_playables()
@@ -690,21 +707,6 @@ class BoardVis(QMainWindow):
         self.helperButton.clicked.connect(lambda: self.show_the_rules.show())
         self.helperButton.move(self.tileSize/6, self.tileSize/6)
         self.helperButton.resize(self.tileSize*2/3, self.tileSize*2/3)
-        self.helperButton.setStyleSheet('''
-            QPushButton {
-                font-family: "Times New Roman";
-                font-size: 25px;
-                background-color: rgb(0, 204, 204);
-                color: black;
-                border: 0.1em solid #000000;
-                border-radius: 25px;
-            }
-            QPushButton:hover {
-                background-color: black;
-                color: rgb(0, 204, 204);
-                border-color: rgb(0, 204, 204);
-            }
-            ''')
         self.helperButton.show()
         self.helperButton.raise_()
 
