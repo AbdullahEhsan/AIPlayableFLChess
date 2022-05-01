@@ -356,6 +356,8 @@ class BoardVis(QMainWindow):
         self.blackTeamText = QLabel(self)
         self.highlightText = QLabel(self)
         self.gameTypeText = QLabel(self)
+        self.winConText = QLabel(self)
+        self.loseText = QLabel(self)
 
         #set up the buttons
         self.startGameButton= QPushButton("Start game",self)
@@ -394,6 +396,10 @@ class BoardVis(QMainWindow):
         self.theme = None
 
         self.current_player_white = 1
+        self.conpic = QLabel(self)
+        self.conpic1 = QLabel(self)
+        self.conpic2 = QLabel(self)
+        self.lospic = QLabel(self)
 
         self.showBoard()
 
@@ -458,6 +464,12 @@ class BoardVis(QMainWindow):
         self.aiPieceInfoText.setStyleSheet(text_css+';background-color: rgba(0, 0, 0, 0.8)')
 
         self.okayButton.setStyleSheet(button_css)
+        
+        #End Game screen
+        self.winConText.setStyleSheet(alt_text_css if theme == 'marble' else text_css)
+        self.restartton.setStyleSheet(button_css)
+        self.loseText.setStyleSheet(alt_text_css if theme == 'marble' else text_css)
+
 
         # board
         self.set_non_playables()
@@ -886,6 +898,53 @@ class BoardVis(QMainWindow):
         self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
         self.winCon.move(0, 0)
         self.winCon.hide()
+        
+    def loseScreen(self):
+        # set up the win congratulation screen properties
+        self.winCon = QLabel(self)
+        self.winCon.setAlignment(Qt.AlignCenter)
+        self.winCon.resize(925, 675)
+        self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
+        self.winCon.move(0, 0)
+        self.winCon.show()
+
+        # set up the win congratulation screen text properties
+        self.loseText.setAlignment(Qt.AlignCenter)
+        self.loseText.setText("You lose!"
+                                "\nYour king was captured by the enemy!")
+        self.loseText.resize(900, 100)
+        font1 = QFont()
+        font1.setFamily('Arial')
+        font1.setPixelSize(self.loseText.height() * 0.4)
+        self.loseText.setFont(font1)
+        self.loseText.move(0, self.height() / 2 - 170)
+        self.loseText.show()
+        self.loseText.raise_()
+
+
+        pic = QMovie('./picture/sad.gif')
+        self.lospic.setMovie(pic)
+        self.lospic.resize(400, 500)
+        self.lospic.move(300, 200)
+        pic.start()
+        self.lospic.show()
+        self.lospic.raise_()
+
+        # set quit button
+        self.__set_button(self.quitButton, 0.9)
+        self.quitButton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 200
+                            , int((self.boardSize / 2) + 250))
+        self.quitButton.clicked.connect(QCoreApplication.instance().quit)
+        self.quitButton.show()
+        self.quitButton.raise_()
+
+        # set restart button
+        self.__set_button(self.restartton, 0.9)
+        self.restartton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 80
+                            , int((self.boardSize / 2) + 250))
+        self.restartton.clicked.connect(self.returnToStartScreen2)
+        self.restartton.show()
+        self.restartton.raise_()
 
     def congratulations(self):
         # set up the win congratulation screen properties
@@ -908,7 +967,7 @@ class BoardVis(QMainWindow):
         pic1 = QMovie('./picture/cr2.gif')
         self.conpic1.setMovie(pic1)
         self.conpic1.resize(500, 300)
-        self.conpic1.move(300, 50)
+        self.conpic1.move(500, 50)
         pic1.start()
         self.conpic1.show()
 
@@ -921,31 +980,32 @@ class BoardVis(QMainWindow):
         self.conpic2.show()
 
         # set up the win congratulation screen text properties
-        self.winConText = QLabel(self)
-        self.winConText.setAlignment(Qt.AlignCenter)
-        self.winConText.setText("Congratulations! "
-                                "\nWinner: " +
+        if (self.current_player_white and self.whiteHumanButton.isChecked()) or (
+                not self.current_player_white and self.blackHumanButton.isChecked()) \
+                or (self.whiteHumanButton.isChecked() and self.blackHumanButton.isChecked()):
+            self.winConText.setAlignment(Qt.AlignCenter)
+            self.winConText.setText("Congratulations! "
+                                    "\nWinner: " +
                                     ("White" if self.current_player_white else "Black") +
                                     " Team!")
-        self.winConText.setStyleSheet('color: red; font-weight: bold')
-        self.winConText.setFont(QFont('Arial', 30))
-        self.winConText.resize(925, 675)
-        self.winConText.move(0, -100)
+        else:
+            self.winConText.setAlignment(Qt.AlignCenter)
+            self.winConText.setText("Winner: " +
+                                    ("White" if self.current_player_white else "Black") +
+                                    " Team!")
+        self.winConText.resize(900, 100)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.winConText.height() * .4)
+        self.winConText.setFont(font)
+        self.winConText.move(0, self.height() / 2 - 100)
         self.winConText.show()
-
-        # set quit button
-        self.quitButton = QPushButton('Quit', self)
-        self.__set_button(self.quitButton, 0.9)
-        self.quitButton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 200
-                            , int((self.boardSize / 2) + 250))
-        self.quitButton.clicked.connect(QCoreApplication.instance().quit)
-        self.quitButton.show()
-        self.quitButton.raise_()
+        self.winConText.raise_()       
 
         # set restart button
         self.restartton = QPushButton('Restart', self)
         self.__set_button(self.restartton, 0.9)
-        self.restartton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 80
+        self.restartton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 130
                             , int((self.boardSize / 2) + 250))
         self.restartton.clicked.connect(self.returnToStartScreen2)
         self.restartton.show()
@@ -954,11 +1014,12 @@ class BoardVis(QMainWindow):
     def returnToStartScreen2(self):
         self.restartton.hide()
         self.winConText.hide()
-        self.quitButton.hide()
         self.winCon.hide()
         self.conpic.hide()
         self.conpic1.hide()
         self.conpic2.hide()
+        self.loseText.hide()
+        self.lospic.hide()
         self.returnToStartScreen()
 
     def update_captured_pieces(self):
