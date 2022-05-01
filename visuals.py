@@ -393,6 +393,8 @@ class BoardVis(QMainWindow):
 
         self.theme = None
 
+        self.current_player_white = 1
+
         self.showBoard()
 
     def set_theme(self, theme:str = 'default'):
@@ -471,6 +473,7 @@ class BoardVis(QMainWindow):
             piece = self.moving_piece
         piece.set_h_mode(False)
         self.remove_all_h()
+        self.current_player_white = self.controller.tracker.current_player
         isAttack = (self.move_end[0], self.move_end[1], True) in piece.moves
         moveSuccessful = self.controller.move_piece(from_x=self.move_start[0], from_y=self.move_start[1],
                                                     to_x=self.move_end[0], to_y=self.move_end[1])
@@ -629,8 +632,8 @@ class BoardVis(QMainWindow):
         self.wCapturedFrame.setGeometry(int(self.boardSize) - 10,
                                       420,
                                       200, 140)
-        self.wCapLayout = QVBoxLayout()            
-        self.wCapLayout.addWidget(QWidget())                   
+        self.wCapLayout = QVBoxLayout()
+        self.wCapLayout.addWidget(QWidget())
         self.wCapturedFrame.setLayout(self.wCapLayout)
 
         # Create black pieces captured
@@ -875,7 +878,7 @@ class BoardVis(QMainWindow):
             "white": [],
             "black": []
         }
-        
+
         # set up the win congratulation screen properties
         self.winCon = QLabel(self)
         self.winCon.setAlignment(Qt.AlignCenter)
@@ -883,7 +886,7 @@ class BoardVis(QMainWindow):
         self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
         self.winCon.move(0, 0)
         self.winCon.hide()
-    
+
     def congratulations(self):
         # set up the win congratulation screen properties
         self.winCon = QLabel(self)
@@ -922,7 +925,7 @@ class BoardVis(QMainWindow):
         self.winConText.setAlignment(Qt.AlignCenter)
         self.winConText.setText("Congratulations! "
                                 "\nWinner: " +
-                                    ("White" if self.controller.tracker.get_current_player() else "Black") +
+                                    ("White" if self.current_player_white else "Black") +
                                     " Team!")
         self.winConText.setStyleSheet('color: red; font-weight: bold')
         self.winConText.setFont(QFont('Arial', 30))
@@ -947,7 +950,7 @@ class BoardVis(QMainWindow):
         self.restartton.clicked.connect(self.returnToStartScreen2)
         self.restartton.show()
         self.restartton.raise_()
-        
+
     def returnToStartScreen2(self):
         self.restartton.hide()
         self.winConText.hide()
@@ -957,11 +960,11 @@ class BoardVis(QMainWindow):
         self.conpic1.hide()
         self.conpic2.hide()
         self.returnToStartScreen()
-        
+
     def update_captured_pieces(self):
         # grab new list of captured piece labels
         wCapLabels = [item[0] for item in self.controller.get_pieces_captured_by("white")]
-        bCapLabels = [item[0] for item in self.controller.get_pieces_captured_by("black")]    
+        bCapLabels = [item[0] for item in self.controller.get_pieces_captured_by("black")]
 
         # create updated capture boxes with new lists
         white = PieceGroup(wCapLabels, 5, 0, 25)
@@ -970,7 +973,7 @@ class BoardVis(QMainWindow):
         #store these new capture groups
         self.captured_by["white"] = white
         self.captured_by["black"] = black
-        
+
         # check if the captured frames have layouts
         current_wBox = self.wCapLayout.itemAt(0).widget()
         current_bBox = self.bCapLayout.itemAt(0).widget()
@@ -984,7 +987,7 @@ class BoardVis(QMainWindow):
             print("doesnt")
             self.wCapLayout.addWidget(white)
             self.bCapLayout.addWidget(black)
-        
+
         # current_group = self.wCapturedFrame.layout.itemAt(0).widget()
         # if not current_group:
 
@@ -1049,7 +1052,7 @@ class BoardVis(QMainWindow):
 
     def ai_single_move(self):
         self.ai_move_delay.stop()
-
+        self.current_player_white = self.controller.tracker.current_player
         ai_mv_map_k = self.ai_player.moveMap()
         ai_mv_map_x = self.ai_player.moveMap()
         ai_mv_map_t = self.ai_player.moveMap()
@@ -1134,7 +1137,7 @@ class BoardVis(QMainWindow):
         self.endTurnButton.hide()
         self.moveIndicator.hide()
         self.tableOption.setText("Winner: " +
-                                ("White" if self.controller.tracker.get_current_player() else "Black") +
+                                ("White" if self.current_player_white else "Black") +
                                 " Team!")
         return
 
@@ -1169,6 +1172,7 @@ class BoardVis(QMainWindow):
         self.endTurnButton.show()
 
         self.controller.tracker.current_player = 1
+        self.current_player_white = self.controller.tracker.current_player
 
         self.ai_player = None
         self.ai_v_ai_players = []
@@ -1269,7 +1273,7 @@ class BoardVis(QMainWindow):
             self.endTurnButton.hide()
             self.moveIndicator.hide()
             self.tableOption.setText("Winner: " +
-                                    ("White" if self.controller.tracker.get_current_player() else "Black") +
+                                    ("White" if self.current_player_white else "Black") +
                                     " Team!")
         else:
             self.resultCaptureText.setText("Capture " + ("Successful!" if self.attackSuccess else "Failed!"))
@@ -1293,7 +1297,7 @@ class BoardVis(QMainWindow):
         self.hidepauseBackground()
         self.update_captured_pieces()
         self.make_AI_move() #TODO: find place for this after update pieces is fixed
-        
+
         #set celebrate action
         if self.controller.is_game_over():
             global game_over
@@ -1528,7 +1532,7 @@ class PieceGroup(QWidget):
     # Changed layout mode to grid
 
     def create_group(self, size):
-        
+
         layout = QGridLayout()
         num_rows = len(self.labels) / self.row_items
         for i in range(floor(num_rows) + 1):
@@ -1544,7 +1548,7 @@ class PieceGroup(QWidget):
                 label_name = piece_to_img_name(piece_name)
                 label = corpVis(label_name + self.corp_color, piece_name, size)
                 layout.addWidget(label, i, j)
-    
+
 
         self.setLayout(layout)
 
