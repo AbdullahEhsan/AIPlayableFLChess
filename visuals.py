@@ -1150,6 +1150,7 @@ class BoardVis(QMainWindow):
             self.update_labels()
             self.update_captured_pieces()
             if isAttack:
+                no_pc = type(target_piece).__name__ != 'PieceVis'
                 self.ai_attack_info = {
                     'fromx': str(chr(65+from_x)),
                     'fromy': (8-from_y),
@@ -1157,8 +1158,8 @@ class BoardVis(QMainWindow):
                     'fromtype': ai_mv_piece.piece_type,
                     'tox': str(chr(65+to_x)),
                     'toy': (8-to_y),
-                    'toclr': target_piece.color.title(),
-                    'totype': target_piece.piece_type
+                    'toclr': "" if no_pc else target_piece.color.title(),
+                    'totype': "" if no_pc else target_piece.piece_type
                 }
                 self.rollDiceScreen(moveSuccessful)
             else:
