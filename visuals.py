@@ -400,6 +400,7 @@ class BoardVis(QMainWindow):
         self.conpic1 = QLabel(self)
         self.conpic2 = QLabel(self)
         self.lospic = QLabel(self)
+        self.restartton = QPushButton('Restart', self)
 
         self.showBoard()
 
@@ -1003,7 +1004,6 @@ class BoardVis(QMainWindow):
         self.winConText.raise_()       
 
         # set restart button
-        self.restartton = QPushButton('Restart', self)
         self.__set_button(self.restartton, 0.9)
         self.restartton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 130
                             , int((self.boardSize / 2) + 250))
