@@ -531,15 +531,24 @@ class Game:
                 return
 
             for move in [(0,1), (0,-1), (1,0), (1,1), (1,-1), (-1,0), (-1,1), (-1,-1)]:
-                    next_pos = cur[0] + move[0], cur[1] + move[1]
-                    if next_pos in self.__dist and self.__dist[next_pos] == self.__dist[cur] + 1:
-                        self.__ways[next_pos] += self.__ways[cur]
-                    if next_pos not in self.__dist:
-                        self.__dist[next_pos] = self.__dist[cur]+1
-                        self.__ways[next_pos] = self.__ways[cur]
-                        queue.append(next_pos)
+                next_pos = cur[0] + move[0], cur[1] + move[1]
+                if self.inbound(next_pos[1], next_pos[0]) == False:
+                    continue
+                elif self.__board[next_pos[1]][next_pos[0]].piece is not None:
+                    continue
+                if next_pos in self.__dist and self.__dist[next_pos] == self.__dist[cur] + 1:
+                    self.__ways[next_pos] += self.__ways[cur]
+                if next_pos not in self.__dist:
+                    self.__dist[next_pos] = self.__dist[cur]+1
+                    self.__ways[next_pos] = self.__ways[cur]
+                    queue.append(next_pos)
 
-
+    def inbound(self, x, y):
+        if x >= 8 or x < 0:
+            return False
+        if y >= 8 or y < 0:
+            return False
+        return True
 
     def __is_rook_attack(self, from_x:int, from_y:int, to_x:int, to_y:int)->bool:
         self.__move_path = []
