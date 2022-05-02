@@ -359,7 +359,7 @@ class Game:
                         self.__move_path = [(to_x, to_y)]
                         return True
                 else: return False
-            if self.__last_move_knight[0].corp == piece.corp:
+            if self.__is_corp_command_game and self.__last_move_knight[0].corp == piece.corp:
                 return False
 
         if piece_type == 'Pawn':
