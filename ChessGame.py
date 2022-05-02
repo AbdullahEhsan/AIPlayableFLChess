@@ -514,7 +514,7 @@ class Game:
     def bfs(self, from_x: int, from_y: int, to_x: int, to_y: int):
         self.__ways = {}
         self.__dist = {}
-        self.__min_moves = None
+        self.__min_moves = 0
         start = (from_x, from_y)
         goal = (to_x, to_y)
         queue = deque()
@@ -534,7 +534,7 @@ class Game:
                 next_pos = cur[0] + move[0], cur[1] + move[1]
                 if self.inbound(next_pos[1], next_pos[0]) == False:
                     continue
-                elif self.__board[next_pos[1]][next_pos[0]].piece is not None:
+                elif self.__board[next_pos[1]][next_pos[0]].has_piece():
                     continue
                 if next_pos in self.__dist and self.__dist[next_pos] == self.__dist[cur] + 1:
                     self.__ways[next_pos] += self.__ways[cur]
