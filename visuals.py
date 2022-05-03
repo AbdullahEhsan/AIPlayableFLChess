@@ -1093,10 +1093,18 @@ class BoardVis(QMainWindow):
     def ai_single_move(self):
         self.ai_move_delay.stop()
         self.current_player_white = self.controller.tracker.current_player
+
+        if self.attackSuccess and (piece_for_king := self.ai_player.corpBalance()):
+            kingCorp = self.controller.get_corp_info(white=self.controller.tracker.current_player)[2]['name']
+            self.controller.delegate_or_recall(piece=piece_for_king[0], from_corp=piece_for_king[1], to_corp=kingCorp)
+            self._update_pieces()
+
+
         ai_mv_map_k = self.ai_player.moveMap()
         ai_mv_map_x = self.ai_player.moveMap()
         ai_mv_map_t = self.ai_player.moveMap()
         ai_mv = self.ai_player.best_move(ai_mv_map_k, ai_mv_map_x, ai_mv_map_t)
+
         to_x, to_y = ai_mv[0], ai_mv[1]
         from_x, from_y = ai_mv[4], ai_mv[5]
         ai_mv_piece = self.piecePos[from_y][from_x]

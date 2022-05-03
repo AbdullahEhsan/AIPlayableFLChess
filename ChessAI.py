@@ -62,7 +62,7 @@ class AIFunctions:
                 pc, corp = spot
                 if pc == piece_name:
                     if(object_return):
-                        return pc
+                        return spot
                     else:
                         return (x, y)
         print('piece not on board')
@@ -79,14 +79,13 @@ class AIFunctions:
         kcore = 0
         for item in self.board:
             for item2 in item:
-                if item2.piece:
-                    if self.color == item2.piece.is_white():
-                        if item2.piece.get_corp() == 'corpW1' or item2.piece.get_corp() == 'corpB1':
-                            lcore = lcore + self.pieceweight(item2.piece)
-                        elif item2.piece.get_corp() == 'corpW2' or item2.piece.get_corp() == 'corpB2':
-                            kcore = kcore + self.pieceweight(item2.piece)
-                        elif item2.piece.get_corp() == 'corpW2'  or item2.piece.get_corp() == 'corpB3':
-                            rcore = rcore + self.pieceweight(item2.piece)
+                if item2.piece and self.color == item2.piece.is_white():
+                    if item2.piece.get_corp() == 'corpW1' or item2.piece.get_corp() == 'corpB1':
+                        lcore = lcore + self.pieceweight(item2.piece)
+                    elif item2.piece.get_corp() == 'corpW2' or item2.piece.get_corp() == 'corpB2':
+                        kcore = kcore + self.pieceweight(item2.piece)
+                    elif item2.piece.get_corp() == 'corpW3'  or item2.piece.get_corp() == 'corpB3':
+                        rcore = rcore + self.pieceweight(item2.piece)
 
         if(self.color == True):
             rook1 = 'wR1'
@@ -101,16 +100,16 @@ class AIFunctions:
             print(lcore - kcore)
             if(lcore - kcore>=2):
                 print("Attempting to take a rook from lcore")
-                piece = self.__get_position_of_piece(rook1, object_return=True)
+                piece, corp = self.__get_position_of_piece(rook1, object_return=True)
                 if(piece != None):
-                    return piece, (lcore-kcore)
+                    return piece, corp, (lcore-kcore)
         if kcore - rcore < kcore - lcore:
             print(rcore - kcore)
             if (rcore - kcore >= 2):
                 print("Attempting to take a rook from rcore")
                 piece = self.__get_position_of_piece(rook2, object_return=True)
                 if (piece != None):
-                    return piece, (rcore - kcore)
+                    return piece, corp, (rcore - kcore)
 
 
 
