@@ -1,8 +1,10 @@
 from math import floor
+import pickle
+import socket
 from typing import Tuple
 from PyQt5.QtCore import Qt, QPoint, QSize, QTimer, QCoreApplication
 from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, QGridLayout, \
-    QComboBox, QRadioButton, QButtonGroup
+    QComboBox, QRadioButton, QButtonGroup, QLineEdit
 from PyQt5.QtGui import QPixmap, QMouseEvent, QFont, QMovie, QIcon
 
 from ChessAI import AIFunctions as AIPlayer
@@ -339,7 +341,9 @@ class BoardVis(QMainWindow):
         self.loseText = QLabel(self)
 
         #set up the buttons
-        self.startGameButton= QPushButton("Start game",self)
+        self.startGameButton= QPushButton("Offline game",self)
+        self.hostGameButton = QPushButton("Host Game",self)
+        self.joinGameButton = QPushButton("Join Game",self)
 
         self.whiteHumanButton = QRadioButton("Human", self)
         self.whiteAIButton = QRadioButton("Computer", self)
@@ -439,6 +443,9 @@ class BoardVis(QMainWindow):
 
         self.startGameButton.setStyleSheet(button_css)
 
+        self.hostGameButton.setStyleSheet(button_css)
+        self.joinGameButton.setStyleSheet(button_css)
+
         # roll dice screen
         self.rollText.setStyleSheet(alt_text_css)
         self.resultCaptureText.setStyleSheet(alt_text_css)
@@ -458,6 +465,65 @@ class BoardVis(QMainWindow):
     def update_chosen_theme(self):
         theme = self.theme_menu.get_theme()
         self.set_theme(theme)
+    
+    def createServer(self):
+        self._update_pieces()
+        self.update_labels()
+        self.update_captured_pieces()
+        HOST = 'localhost'
+        PORT = 50007
+        global ai_turn
+        ai_turn = True
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind((HOST, PORT))
+        
+        isServer = True
+        while isServer:
+
+            s.listen(1)
+            conn, addr = s.accept()
+            print('Connected by', addr)
+            data = conn.recv(4096)
+            data_variable = pickle.loads(data)
+
+            
+            self.controller = data_variable
+
+            #add function to update board and dvisuals here
+
+            self._update_pieces()
+            self.update_labels()
+            self.update_captured_pieces()
+
+            if self.controller.tracker.current_player == self.current_player_white:
+                isServer = False
+                ai_turn = False
+            print(self.controller.tracker.current_player, ai_turn)
+
+
+        conn.close()
+        print(data_variable)
+        # Access the information by doing data_variable.process_id or data_variable.task_id etc..,
+        print('Data received from client')
+
+
+    def createClient(self):
+        HOST = 'localhost'
+        PORT = 50007
+        # Create a socket connection.
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((HOST, PORT))
+
+        variable = self.controller
+        # Create an instance of ProcessData() to send to server.
+        # Pickle the object and send it to the server
+        data_string = pickle.dumps(variable)
+        s.send(data_string)
+        del data_string
+
+        s.close()
+        print('Data Sent to Server')
 
     def do_piece_move(self, mvd_piece: PieceVis, dragged:bool=False):
         print("was called")
@@ -729,9 +795,31 @@ class BoardVis(QMainWindow):
         font.setFamily('Arial')
         font.setPixelSize(self.startGameButton.height() * 0.4)
         self.startGameButton.setFont(font)
-        self.startGameButton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel
+        self.startGameButton.move(int((self.boardSize / 2) + (self.startGameButton.width() / 2)) + moveIntoSidePanel
                             , int((self.boardSize / 2) + 250))
         self.startGameButton.hide()
+
+        # Set up host game button props
+        self.hostGameButton.clicked.connect(self.hostGameClicked)
+        self.hostGameButton.resize(150, 40)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.hostGameButton.height() * 0.4)
+        self.hostGameButton.setFont(font)
+        self.hostGameButton.move(int((self.boardSize / 2) - (self.startGameButton.width() + (self.startGameButton.width() / 2))) + moveIntoSidePanel
+                            , int((self.boardSize / 2) + 250))
+        self.hostGameButton.hide()
+
+        # Set up join game button props
+        self.joinGameButton.clicked.connect(self.joinGameClicked)
+        self.joinGameButton.resize(150, 40)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.joinGameButton.height() * 0.4)
+        self.joinGameButton.setFont(font)
+        self.joinGameButton.move(int((self.boardSize / 2) - (self.joinGameButton.width() / 2)) + moveIntoSidePanel
+                            , int((self.boardSize / 2) + 250))
+        self.joinGameButton.hide()
 
         #set up team text properties
         self.whiteTeamText.setAlignment(Qt.AlignCenter)
@@ -1182,39 +1270,32 @@ class BoardVis(QMainWindow):
                                 " Team!")
         return
 
+    def hostGameClicked(self):
+        global game_over
+        game_over = False
+
+        self.setupGameType()
+        self.setupVisuals()
+        self.createServer()
+
+    def joinGameClicked(self):
+        self.join_window = JoinWindow(600, 400, self)
+        self.join_window.show()
+
     def startGameClicked(self):
         global game_over
         game_over = False
 
-        self.theme_menu.close()
-        if self.medievalButton.isChecked():
-            self.__game_type = "Medieval"
-            self.corpButton.hide()
-        elif self.corpCommanderButton.isChecked():
-            self.__game_type = "Corp"
-            self.corpButton.show()
-        self.controller = chess_game(game_type=self.__game_type)
-        if self.__game_type == "Corp":
-            self.corp_menu = CorpMenu(self)
+        self.setup_game_type()
 
-        self._update_pieces()
-        self.update_labels()
-        self.update_captured_pieces()
-
-        if self.onhighlight.isChecked():
-            self.h_mode = True
-        elif self.offhighlight.isChecked():
-            self.h_mode = False
-
-        self.hideStartScreen()
-        self.tableOption.show()
-        self.moveIndicator.show()
-        self.restartButton.show()
-        self.endTurnButton.show()
+        self.setup_visuals()
 
         self.controller.tracker.current_player = 1
         self.current_player_white = self.controller.tracker.current_player
 
+        self.setup_ai_turns()
+
+    def setup_ai_turns(self):
         self.ai_player = None
         self.ai_v_ai_players = []
 
@@ -1234,6 +1315,34 @@ class BoardVis(QMainWindow):
             # whiteAI v blackHuman
             self.ai_player = AIPlayer(self.controller, 1)
             self.make_AI_move()
+
+    def setup_visuals(self):
+        self._update_pieces()
+        self.update_labels()
+        self.update_captured_pieces()
+
+        if self.onhighlight.isChecked():
+            self.h_mode = True
+        elif self.offhighlight.isChecked():
+            self.h_mode = False
+
+        self.hideStartScreen()
+        self.tableOption.show()
+        self.moveIndicator.show()
+        self.restartButton.show()
+        self.endTurnButton.show()
+
+    def setup_game_type(self):
+        self.theme_menu.close()
+        if self.medievalButton.isChecked():
+            self.__game_type = "Medieval"
+            self.corpButton.hide()
+        elif self.corpCommanderButton.isChecked():
+            self.__game_type = "Corp"
+            self.corpButton.show()
+        self.controller = chess_game(game_type=self.__game_type)
+        if self.__game_type == "Corp":
+            self.corp_menu = CorpMenu(self)
 
     def okayButtonClicked(self):
         self.hidepauseBackground()
@@ -1319,6 +1428,12 @@ class BoardVis(QMainWindow):
         self.startGameButton.show()
         self.startGameButton.raise_()
 
+        self.hostGameButton.show()
+        self.hostGameButton.raise_()
+
+        self.joinGameButton.show()
+        self.joinGameButton.raise_()
+
     def hideStartScreen(self):
         self.startScreen.hide()
         self.welcomeText.hide()
@@ -1340,6 +1455,8 @@ class BoardVis(QMainWindow):
         self.highlightText.hide()
         self.gameTypeText.hide()
         self.startGameButton.hide()
+        self.hostGameButton.hide()
+        self.joinGameButton.hide()
 
     def returnToStartScreen(self):
         self.ai_move_delay.stop()
@@ -1835,3 +1952,17 @@ class ThemeMenu(QWidget):
         theme = ThemeField(name, img)
         theme.set_click_func(self.set_theme)
         return theme
+
+class JoinWindow(QWidget):
+    def __init__(self, x_size, y_size, main_window):
+        super(JoinWindow, self).__init__()
+        self.setWindowTitle("Enter IP and port to join")
+        self.ip_field = QLineEdit("IP", self)
+        self.port_field = QLineEdit("Port", self)
+        self.join_button = QPushButton("Join", self)
+        self.join_button.clicked.connect(lambda : 1 + 1)
+        v_lay = QVBoxLayout()
+        v_lay.addWidget(self.ip_field)
+        v_lay.addWidget(self.port_field)
+        v_lay.addWidget(self.join_button)
+        self.setLayout(v_lay)
