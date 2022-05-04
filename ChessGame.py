@@ -534,7 +534,8 @@ class Game:
                 next_pos = cur[0] + move[0], cur[1] + move[1]
                 if self.inbound(next_pos[1], next_pos[0]) == False:
                     continue
-                elif self.__board[next_pos[1]][next_pos[0]].has_piece():
+                elif (self.__board[next_pos[1]][next_pos[0]].has_piece() and
+                    self.tracker.current_player == int(self.__board[next_pos[1]][next_pos[0]].piece.is_white())):
                     continue
                 if next_pos in self.__dist and self.__dist[next_pos] == self.__dist[cur] + 1:
                     self.__ways[next_pos] += self.__ways[cur]
