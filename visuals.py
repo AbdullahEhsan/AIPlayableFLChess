@@ -1446,7 +1446,7 @@ class BoardVis(QMainWindow):
                 label.resize(75, 75)
                 label.setScaledContents(True)
                 label.move(int((x+1) * self.tileSize), int((y+1) * self.tileSize))
-                label.show()
+                if not game_is_over: label.show()
                 self.piecePos[y][x] = label
 
     def update_flipped(self):
