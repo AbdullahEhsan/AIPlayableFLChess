@@ -337,9 +337,6 @@ class BoardVis(QMainWindow):
         self.blackTeamText = QLabel(self)
         self.highlightText = QLabel(self)
         self.gameTypeText = QLabel(self)
-        self.winConText = QLabel(self)
-        self.loseText = QLabel(self)
-
         #set up the buttons
         self.startGameButton= QPushButton("Start game",self)
 
@@ -372,11 +369,15 @@ class BoardVis(QMainWindow):
 
         self.current_player_white = 1
 
-        self.conpic = QLabel(self)
-        self.conpic1 = QLabel(self)
-        self.conpic2 = QLabel(self)
-        self.lospic = QLabel(self)
-        self.restartton = QPushButton('Restart', self)
+
+        self.ending_bg = QLabel(self)
+        self.winnerText = QLabel(self)
+        self.loserText = QLabel(self)
+        self.firework0 = QLabel(self)
+        self.firework1 = QLabel(self)
+        self.firework2 = QLabel(self)
+        self.cryface = QLabel(self)
+        self.return_to_start = QPushButton('Return to Start', self)
 
         self.showBoard()
 
@@ -436,10 +437,9 @@ class BoardVis(QMainWindow):
         self.startGameButton.setStyleSheet(button_css)
 
         #End Game screen
-        self.winConText.setStyleSheet(alt_text_css)
-        self.restartton.setStyleSheet(button_css)
-        self.loseText.setStyleSheet(alt_text_css)
-
+        self.winnerText.setStyleSheet(alt_text_css)
+        self.return_to_start.setStyleSheet(button_css)
+        self.loserText.setStyleSheet(alt_text_css)
 
         # board
         self.set_non_playables()
@@ -833,136 +833,130 @@ class BoardVis(QMainWindow):
         self.medievalButton.adjustSize()
         self.corpCommanderButton.adjustSize()
 
+        # set up the win congratulation screen properties
+        self.ending_bg.setAlignment(Qt.AlignCenter)
+        self.ending_bg.resize(self.width(), self.height())
+        self.ending_bg.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
+        self.ending_bg.move(0, 0)
+        self.ending_bg.hide()
+
+        pic = QMovie('./picture/sad.gif')
+        self.cryface.setMovie(pic)
+        self.cryface.resize(400, 500)
+        self.cryface.move((self.width()/2)-self.cryface.width()/2, 200)
+        self.cryface.raise_()
+        self.cryface.hide()
+
+        pic0 = QMovie('./picture/cr1.gif')
+        self.firework0.setMovie(pic0)
+        self.firework0.resize(300, 300)
+        self.firework0.move(0, 200)
+        self.firework0.raise_()
+        self.firework0.hide()
+
+        pic1 = QMovie('./picture/cr2.gif')
+        self.firework1.setMovie(pic1)
+        self.firework1.resize(500, 300)
+        self.firework1.move(500, 50)
+        self.firework1.raise_()
+        self.firework1.hide()
+
+        pic2 = QMovie('./picture/cr3.gif')
+        self.firework2.setMovie(pic2)
+        self.firework2.resize(300, 300)
+        self.firework2.move(600, 300)
+        self.firework2.raise_()
+        self.firework2.hide()
+
+        self.return_to_start.clicked.connect(self.returnToStartScreen)
+        self.return_to_start.resize(150, 40)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.return_to_start.height() * 0.4)
+        self.return_to_start.setFont(font)
+        self.return_to_start.move(int((self.boardSize / 2) - (self.return_to_start.width() / 2)) + moveIntoSidePanel
+                            , int((self.boardSize / 2) + 250))
+        self.return_to_start.raise_()
+        self.return_to_start.hide()
+
+        self.winnerText.resize(900, 100)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.winnerText.height() * .4)
+        self.winnerText.setFont(font)
+        self.winnerText.move(0, self.height() / 2 - 100)
+        self.winnerText.setAlignment(Qt.AlignCenter)
+        self.winnerText.raise_()
+        self.winnerText.hide()
+
+        self.loserText.setAlignment(Qt.AlignCenter)
+        self.loserText.setText("You lose!\nYour king was captured by the enemy!")
+        self.loserText.resize(900, 100)
+        font1 = QFont()
+        font1.setFamily('Arial')
+        font1.setPixelSize(self.loserText.height() * 0.4)
+        self.loserText.setFont(font1)
+        self.loserText.move(0, self.height() / 2 - 150)
+        self.loserText.raise_()
+        self.loserText.hide()
+
         self.set_theme()
         self.roll_dice_screen = DiceRoll(self)
-
 
         self.captured_by = {
             "white": [],
             "black": []
         }
 
-        # set up the win congratulation screen properties
-        self.winCon = QLabel(self)
-        self.winCon.setAlignment(Qt.AlignCenter)
-        self.winCon.resize(925, 675)
-        self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
-        self.winCon.move(0, 0)
-        self.winCon.hide()
 
     def loseScreen(self):
-        # set up the win congratulation screen properties
-        self.winCon = QLabel(self)
-        self.winCon.setAlignment(Qt.AlignCenter)
-        self.winCon.resize(self.width(), self.height())
-        self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
-        self.winCon.move(0, 0)
-        self.winCon.show()
+        self.ending_bg.show()
+        self.ending_bg.raise_()
 
-        # set up the win congratulation screen text properties
-        self.loseText.setAlignment(Qt.AlignCenter)
-        self.loseText.setText("You lose!"
-                                "\nYour king was captured by the enemy!")
-        self.loseText.resize(900, 100)
-        font1 = QFont()
-        font1.setFamily('Arial')
-        font1.setPixelSize(self.loseText.height() * 0.4)
-        self.loseText.setFont(font1)
-        self.loseText.move(0, self.height() / 2 - 170)
-        self.loseText.show()
-        self.loseText.raise_()
+        self.cryface.show()
+        self.cryface.raise_()
+        self.cryface.movie().start()
 
+        self.loserText.show()
+        self.loserText.raise_()
 
-        pic = QMovie('./picture/sad.gif')
-        self.lospic.setMovie(pic)
-        self.lospic.resize(400, 500)
-        self.lospic.move(300, 200)
-        pic.start()
-        self.lospic.show()
-        self.lospic.raise_()
-
-        # set restart button
-        self.__set_button(self.restartton, 0.9)
-        self.restartton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 80
-                            , int((self.boardSize / 2) + 250))
-        self.restartton.clicked.connect(self.returnToStartScreen2)
-        self.restartton.show()
-        self.restartton.raise_()
+        self.return_to_start.show()
+        self.return_to_start.raise_()
 
     def congratulations(self):
-        # set up the win congratulation screen properties
-        self.winCon = QLabel(self)
-        self.winCon.setAlignment(Qt.AlignCenter)
-        self.winCon.resize(925, 675)
-        self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
-        self.winCon.move(0, 0)
-        self.winCon.show()
+        self.ending_bg.show()
+        self.ending_bg.raise_()
 
-        self.conpic = QLabel(self)
-        pic = QMovie('./picture/cr1.gif')
-        self.conpic.setMovie(pic)
-        self.conpic.resize(300, 300)
-        self.conpic.move(0, 200)
-        pic.start()
-        self.conpic.show()
+        self.firework0.show()
+        self.firework0.raise_()
 
-        self.conpic1 = QLabel(self)
-        pic1 = QMovie('./picture/cr2.gif')
-        self.conpic1.setMovie(pic1)
-        self.conpic1.resize(500, 300)
-        self.conpic1.move(500, 50)
-        pic1.start()
-        self.conpic1.show()
+        self.firework1.show()
+        self.firework1.raise_()
 
-        self.conpic2 = QLabel(self)
-        pic2 = QMovie('./picture/cr3.gif')
-        self.conpic2.setMovie(pic2)
-        self.conpic2.resize(300, 300)
-        self.conpic2.move(600, 300)
-        pic2.start()
-        self.conpic2.show()
+        self.firework2.show()
+        self.firework2.raise_()
+
+        self.firework0.movie().start()
+        self.firework1.movie().start()
+        self.firework2.movie().start()
 
         # set up the win congratulation screen text properties
         if (self.current_player_white and self.whiteHumanButton.isChecked()) or (
                 not self.current_player_white and self.blackHumanButton.isChecked()) \
                 or (self.whiteHumanButton.isChecked() and self.blackHumanButton.isChecked()):
-            self.winConText.setAlignment(Qt.AlignCenter)
-            self.winConText.setText("Congratulations! "
+            self.winnerText.setText("Congratulations! "
                                     "\nWinner: " +
                                     ("White" if self.current_player_white else "Black") +
                                     " Team!")
         else:
-            self.winConText.setAlignment(Qt.AlignCenter)
-            self.winConText.setText("Winner: " +
+            self.winnerText.setText("Winner: " +
                                     ("White" if self.current_player_white else "Black") +
                                     " Team!")
-        self.winConText.resize(900, 100)
-        font = QFont()
-        font.setFamily('Arial')
-        font.setPixelSize(self.winConText.height() * .4)
-        self.winConText.setFont(font)
-        self.winConText.move(0, self.height() / 2 - 100)
-        self.winConText.show()
-        self.winConText.raise_()
+        self.winnerText.show()
+        self.winnerText.raise_()
 
-        # set restart button
-        self.__set_button(self.restartton, 0.9)
-        self.restartton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 130
-                            , int((self.boardSize / 2) + 250))
-        self.restartton.clicked.connect(self.returnToStartScreen2)
-        self.restartton.show()
-        self.restartton.raise_()
-
-    def returnToStartScreen2(self):
-        self.restartton.hide()
-        self.winConText.hide()
-        self.winCon.hide()
-        self.conpic.hide()
-        self.conpic1.hide()
-        self.conpic2.hide()
-        self.loseText.hide()
-        self.lospic.hide()
-        self.returnToStartScreen()
+        self.return_to_start.show()
+        self.return_to_start.raise_()
 
     def update_captured_pieces(self):
         # grab new list of captured piece labels
@@ -1179,6 +1173,7 @@ class BoardVis(QMainWindow):
             self.h_mode = False
 
         self.hideStartScreen()
+        self.hideEnding()
         self.tableOption.show()
         self.moveIndicator.show()
         self.restartButton.show()
@@ -1302,10 +1297,28 @@ class BoardVis(QMainWindow):
         self.gameTypeText.hide()
         self.startGameButton.hide()
 
+    def hideEnding(self):
+        self.return_to_start.hide()
+        self.ending_bg.hide()
+
+        self.winnerText.hide()
+        self.firework0.movie().stop()
+        self.firework0.hide()
+        self.firework1.movie().stop()
+        self.firework1.hide()
+        self.firework2.movie().stop()
+        self.firework2.hide()
+
+        self.loserText.hide()
+        self.cryface.movie().stop()
+        self.cryface.hide()
+
     def returnToStartScreen(self):
         self.ai_move_delay.stop()
         global game_over, ai_turn, dice_rolling
-        game_over, ai_turn, dice_rolling = False, False, False
+        game_over, ai_turn, dice_rolling = True, False, False
+
+        self.hideEnding()
 
         self.restartButton.hide()
         self.endTurnButton.hide()
@@ -1834,7 +1847,20 @@ class DiceRoll(QWidget):
         if self.mainwin.controller.is_game_over():
             global game_over
             game_over = True
-            self.mainwin.congratulations()
+            if ((
+                    self.mainwin.blackHumanButton.isChecked()
+                    and self.mainwin.whiteAIButton.isChecked()
+                    and self.mainwin.current_player_white
+                )
+                or
+                (
+                    self.mainwin.whiteHumanButton.isChecked()
+                    and self.mainwin.blackAIButton.isChecked()
+                    and not self.current_player_white
+                )):
+                self.mainwin.loseScreen()
+            else:
+                self.mainwin.congratulations()
         self.close()
 
     def closeEvent(self,event):
