@@ -318,6 +318,11 @@ class Game:
 
         piece = self.__board[from_y][from_x].piece
 
+        if (self.__last_move_knight
+            and self.__last_move_knight[0] != piece
+            and self.tracker.get_number_of_available_moves()<=1):
+            return False
+
         if self.__last_move_knight and self.__last_move_knight[1] != self.tracker.get_turn_count():
             self.__last_move_knight = None
 
@@ -359,7 +364,7 @@ class Game:
                         self.__move_path = [(to_x, to_y)]
                         return True
                 else: return False
-            if self.__last_move_knight[0].corp == piece.corp:
+            if self.__is_corp_command_game and self.__last_move_knight[0].corp == piece.corp:
                 return False
 
         if piece_type == 'Pawn':
@@ -514,7 +519,7 @@ class Game:
     def bfs(self, from_x: int, from_y: int, to_x: int, to_y: int):
         self.__ways = {}
         self.__dist = {}
-        self.__min_moves = None
+        self.__min_moves = 0
         start = (from_x, from_y)
         goal = (to_x, to_y)
         queue = deque()
@@ -531,15 +536,25 @@ class Game:
                 return
 
             for move in [(0,1), (0,-1), (1,0), (1,1), (1,-1), (-1,0), (-1,1), (-1,-1)]:
-                    next_pos = cur[0] + move[0], cur[1] + move[1]
-                    if next_pos in self.__dist and self.__dist[next_pos] == self.__dist[cur] + 1:
-                        self.__ways[next_pos] += self.__ways[cur]
-                    if next_pos not in self.__dist:
-                        self.__dist[next_pos] = self.__dist[cur]+1
-                        self.__ways[next_pos] = self.__ways[cur]
-                        queue.append(next_pos)
+                next_pos = cur[0] + move[0], cur[1] + move[1]
+                if self.inbound(next_pos[1], next_pos[0]) == False:
+                    continue
+                elif (self.__board[next_pos[1]][next_pos[0]].has_piece() and
+                    self.tracker.current_player == int(self.__board[next_pos[1]][next_pos[0]].piece.is_white())):
+                    continue
+                if next_pos in self.__dist and self.__dist[next_pos] == self.__dist[cur] + 1:
+                    self.__ways[next_pos] += self.__ways[cur]
+                if next_pos not in self.__dist:
+                    self.__dist[next_pos] = self.__dist[cur]+1
+                    self.__ways[next_pos] = self.__ways[cur]
+                    queue.append(next_pos)
 
-
+    def inbound(self, x, y):
+        if x >= 8 or x < 0:
+            return False
+        if y >= 8 or y < 0:
+            return False
+        return True
 
     def __is_rook_attack(self, from_x:int, from_y:int, to_x:int, to_y:int)->bool:
         self.__move_path = []

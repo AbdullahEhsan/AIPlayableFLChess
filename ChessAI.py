@@ -2,7 +2,6 @@ import random
 
 from ChessGame import Game
 
-
 # game = Game()
 
 class AIFunctions:
@@ -14,6 +13,8 @@ class AIFunctions:
         self.total_moves_attempted = 0
         self.last_turn = 0
         self.kingmod = 1
+        self.wTurn_count = 0
+        self.bTurn_count = 0
         self.hostilemap = \
             [[0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -62,7 +63,7 @@ class AIFunctions:
                 pc, corp = spot
                 if pc == piece_name:
                     if(object_return):
-                        return pc
+                        return spot
                     else:
                         return (x, y)
         print('piece not on board')
@@ -79,14 +80,13 @@ class AIFunctions:
         kcore = 0
         for item in self.board:
             for item2 in item:
-                if item2.piece:
-                    if self.color == item2.piece.is_white():
-                        if item2.piece.get_corp() == 'corpW1' or item2.piece.get_corp() == 'corpB1':
-                            lcore = lcore + self.pieceweight(item2.piece)
-                        elif item2.piece.get_corp() == 'corpW2' or item2.piece.get_corp() == 'corpB2':
-                            kcore = kcore + self.pieceweight(item2.piece)
-                        elif item2.piece.get_corp() == 'corpW2'  or item2.piece.get_corp() == 'corpB3':
-                            rcore = rcore + self.pieceweight(item2.piece)
+                if item2.piece and self.color == item2.piece.is_white():
+                    if item2.piece.get_corp() == 'corpW1' or item2.piece.get_corp() == 'corpB1':
+                        lcore = lcore + self.pieceweight(item2.piece)
+                    elif item2.piece.get_corp() == 'corpW2' or item2.piece.get_corp() == 'corpB2':
+                        kcore = kcore + self.pieceweight(item2.piece)
+                    elif item2.piece.get_corp() == 'corpW3' or item2.piece.get_corp() == 'corpB3':
+                        rcore = rcore + self.pieceweight(item2.piece)
 
         if(self.color == True):
             rook1 = 'wR1'
@@ -101,16 +101,16 @@ class AIFunctions:
             print(lcore - kcore)
             if(lcore - kcore>=2):
                 print("Attempting to take a rook from lcore")
-                piece = self.__get_position_of_piece(rook1, object_return=True)
+                piece, corp = self.__get_position_of_piece(rook1, object_return=True)
                 if(piece != None):
-                    return piece, (lcore-kcore)
+                    return piece, corp, (lcore-kcore)
         if kcore - rcore < kcore - lcore:
             print(rcore - kcore)
             if (rcore - kcore >= 2):
                 print("Attempting to take a rook from rcore")
                 piece = self.__get_position_of_piece(rook2, object_return=True)
                 if (piece != None):
-                    return piece, (rcore - kcore)
+                    return piece, corp, (rcore - kcore)
 
 
 
@@ -256,12 +256,6 @@ class AIFunctions:
         for item in self.board:
             for item2 in item:
                 if item2.piece:
-                    # if self.color == item2.piece.is_white():
-                    #     if (item2.piece.get_type() == 'King'):
-                    #         KingLocation = (y, x)
-                    #         print ('==========================================================')
-                    #         print('testing KingLocation', KingLocation ,'\n\n\n')
-
                     if self.color != item2.piece.is_white():
                         moveList = self.game.get_possible_moves_for_piece_at(x=y, y=x, ai_backdoor=True)
 
@@ -326,6 +320,8 @@ class AIFunctions:
             for item2 in item:
                 if item2.piece:
                     if self.color == item2.piece.is_white():
+
+
                         moveList = self.game.get_possible_moves_for_piece_at(x=y, y=x)
 
                         if (item2.piece.get_type() == 'Pawn'):
@@ -335,6 +331,24 @@ class AIFunctions:
                             spotVal = 1
                         else:
                             spotVal = 4
+
+                        # print("Turn Count Testing: ", wTurn_count)
+                        if (self.wTurn_count < 3):
+                            # print(item2.piece.get_name())
+                            # if ((item2.piece.get_name() == 'wP4')
+                            #         or (item2.piece.get_name() == 'bP4')
+                            if ((item2.piece.get_name() == 'wP1')
+                                    or (item2.piece.get_name() == 'wP8')):
+                                spotVal += 50
+
+                        if (self.bTurn_count < 3):
+                            # print(item2.piece.get_name())
+                            # if ((item2.piece.get_name() == 'wP4')
+                            #         or (item2.piece.get_name() == 'bP4')
+                            if ((item2.piece.get_name() == 'bP1')
+                                    or (item2.piece.get_name() == 'bP8')):
+                                spotVal += 50
+
                         for l, m, p in moveList:
                             if (p):
                                 heatmap[m][l] += self.attackRef(x, y, item2.piece)
@@ -372,14 +386,18 @@ class AIFunctions:
                                 if player == "black":
                                     if (m - x == 5 or x - m == 5 or l - y == 5):
                                         heatmap[m][l] += 4
+
+
+
+
                             heatmap[m][l] += spotVal - self.hostilemap[m][l] + self.kingOrderGrid[m][l]
                             if item2.piece.get_type() != 'King':
                                 hosval = self.hostilemap[m][l] % 1000
                             else:
                                 hosval = self.hostilemap[m][l]
-                                print ('King Testing=======================:', hosval)
+                                #print ('King Testing=======================:', hosval)
 
-                            print ('hosval Testing=======================:', hosval)
+                            #print ('hosval Testing=======================:', hosval)
                             heatmap[m][l] += spotVal - self.hostilemap[m][l]
 
                         dataChunk = [item2.piece, heatmap]
@@ -428,6 +446,7 @@ class AIFunctions:
         max_weight = None
         BKingLocation = self.__get_position_of_piece('bKg')
         WKingLocation = self.__get_position_of_piece('wKg')
+
         BestSameScore = []
         print(kCore[2])
 
@@ -445,7 +464,7 @@ class AIFunctions:
                         if weight != 0:
                             if ((x == WKingLocation[0] and y == WKingLocation[1])
                                     or (x == BKingLocation[0] and y == BKingLocation[1])):
-                                print("Testing1========================================")
+                                #print("Testing1========================================")
                                 max_weight_piece = (x, y, weight + 20, element.get_name(), element.x_loc, element.y_loc)
                                 SameScore = [max_weight_piece]
                             if not max_weight_piece:
@@ -454,7 +473,7 @@ class AIFunctions:
                                     max_weight_piece = (
                                     x, y, weight + 20, element.get_name(), element.x_loc, element.y_loc)
                                     SameScore = [max_weight_piece]
-                                    print("Testing2========================================")
+                                    #print("Testing2========================================")
                                 else:
                                     max_weight_piece = (x, y, weight, element.get_name(), element.x_loc, element.y_loc)
                                     SameScore = [max_weight_piece]
@@ -468,7 +487,7 @@ class AIFunctions:
                                         max_weight_piece = (
                                         x, y, weight, element.get_name(), element.x_loc, element.y_loc)
                                         SameScore = [max_weight_piece]
-                                        print("Testing3========================================")
+                                        #print("Testing3========================================")
                                     else:
                                         max_weight_piece = (
                                         x, y, weight, element.get_name(), element.x_loc, element.y_loc)
@@ -511,7 +530,7 @@ class AIFunctions:
                         if weight != 0:
                             if ((x == WKingLocation[0] and y == WKingLocation[1])
                                     or (x == BKingLocation[0] and y == BKingLocation[1])):
-                                print("Testing1========================================")
+                                #print("Testing1========================================")
                                 max_weight_piece = (x, y, weight + 20, element.get_name(), element.x_loc, element.y_loc)
                                 SameScore = [max_weight_piece]
                             if not max_weight_piece:
@@ -520,7 +539,7 @@ class AIFunctions:
                                     max_weight_piece = (
                                     x, y, weight + 20, element.get_name(), element.x_loc, element.y_loc)
                                     SameScore = [max_weight_piece]
-                                    print("Testing2========================================")
+                                    #print("Testing2========================================")
                                 else:
                                     max_weight_piece = (x, y, weight, element.get_name(), element.x_loc, element.y_loc)
                                     SameScore = [max_weight_piece]
@@ -534,7 +553,7 @@ class AIFunctions:
                                         max_weight_piece = (
                                         x, y, weight, element.get_name(), element.x_loc, element.y_loc)
                                         SameScore = [max_weight_piece]
-                                        print("Testing3========================================")
+                                        #print("Testing3========================================")
                                     else:
                                         max_weight_piece = (
                                         x, y, weight, element.get_name(), element.x_loc, element.y_loc)
@@ -577,7 +596,7 @@ class AIFunctions:
                         if weight != 0:
                             if ((x == WKingLocation[0] and y == WKingLocation[1])
                                     or (x == BKingLocation[0] and y == BKingLocation[1])):
-                                print("Testing1========================================")
+                                #print("Testing1========================================")
                                 max_weight_piece = (x, y, weight + 20, element.get_name(), element.x_loc, element.y_loc)
                                 SameScore = [max_weight_piece]
                             if not max_weight_piece:
@@ -586,7 +605,7 @@ class AIFunctions:
                                     max_weight_piece = (
                                     x, y, weight + 20, element.get_name(), element.x_loc, element.y_loc)
                                     SameScore = [max_weight_piece]
-                                    print("Testing2========================================")
+                                    #print("Testing2========================================")
                                 else:
                                     max_weight_piece = (x, y, weight, element.get_name(), element.x_loc, element.y_loc)
                                     SameScore = [max_weight_piece]
@@ -600,7 +619,7 @@ class AIFunctions:
                                         max_weight_piece = (
                                         x, y, weight, element.get_name(), element.x_loc, element.y_loc)
                                         SameScore = [max_weight_piece]
-                                        print("Testing3========================================")
+                                        #print("Testing3========================================")
                                     else:
                                         max_weight_piece = (
                                         x, y, weight, element.get_name(), element.x_loc, element.y_loc)
@@ -637,6 +656,13 @@ class AIFunctions:
 
 
         print("Best Move after everything: ", BestMove, "\n\n")
+        colour = "white" if self.color else "black"
+        if (colour == 'white'):
+            self.wTurn_count = self.wTurn_count + 1
+            print("Changing the Black Gobal turn count: ", self.wTurn_count)
+        if (colour == 'white'):
+            self.bTurn_count = self.bTurn_count + 1
+            print("Changing the White Gobal turn count: ", self.bTurn_count)
 
         return BestMove
 
@@ -664,7 +690,9 @@ class AIFunctions:
             X = self.moveMap()
             T = self.moveMap()
             y = self.best_move(K,X,T)
+
             self.AI_move(y)
+
             self.last_turn = self.game.tracker.get_turn_count()
             colour = "white" if self.color else "black"
             print(colour, "team had", self.total_success_moves, 'successful moves out of', self.total_moves_attempted,
