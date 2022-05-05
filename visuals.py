@@ -993,51 +993,6 @@ class BoardVis(QMainWindow):
             self.wCapLayout.addWidget(white)
             self.bCapLayout.addWidget(black)
 
-        # current_group = self.wCapturedFrame.layout.itemAt(0).widget()
-        # if not current_group:
-
-        # self.col_layouts[i-1].replaceWidget(current_group, new_piece_group)
-        # current_group.setParent(None)
-
-
-
-
-    """ def updated_captured_by(self, color:str):
-        if color == 'white':
-            starting = 425
-        elif color == 'black':
-            starting = 130
-        else:
-            return
-
-        captured = [piece_to_img_name(piece[0]).lower()+".png" for piece in self.controller.get_pieces_captured_by(color)]
-
-        self.captured_by[color] = []
-
-        img_size = 35
-        offset = 40
-        for i, pc in enumerate(captured):
-
-            captured_pc = QLabel(self)
-            captured_pc.setAlignment(Qt.AlignCenter)
-            cap = QPixmap('./picture/' + pc)
-            cap = cap.scaled(img_size, img_size)
-            captured_pc.setPixmap(cap)
-            captured_pc.resize(img_size, img_size)
-            captured_pc.move(
-                int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 10 + (img_size*(i%5)),
-                    starting + (offset*int(i/5))
-            )
-            self.captured_by[color].append(captured_pc)
-            # setattr(self, "wCapturedPic{}".format(i), self.wCapturedPic) """
-
-
-
-    def delete_captured_pieces(self):
-        for team in self.captured_by.values():
-            for captured in team:
-                captured.setParent(None)
-
     def make_AI_move(self):
         global ai_turn
         ai_turn = True
