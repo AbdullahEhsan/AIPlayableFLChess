@@ -34,9 +34,9 @@ pip install -r req.txt
 ```
 
 ## Status:
-- **Frontend**: Refinement 🟢
-- **Backend**: Refinement 🟢
-- **AI**: Developing 🟡
+- **Frontend**: Completed 🟢
+- **Backend**: Completed 🟢
+- **AI**: Completed 🟢
 
 ## Contributors:
 - [**Abdullah**](https://github.com/AbdullahEhsan) (Backend, Frontend, assisted with AI)
@@ -46,3 +46,7 @@ pip install -r req.txt
 - [**Kevinpaul**](https://github.com/kevinpaulguna) (Frontend P5)
 - [**Seth**](https://github.com/ExhaustedDev) (Frontend, Backend)
 - [**Teddy**](https://github.com/ted4bartz) (AI)
+
+## Potential Future Features
+- Resizable game window
+- Local network game play
