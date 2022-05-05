@@ -1,3 +1,4 @@
+import os.path
 from math import floor
 from typing import Tuple
 from xmlrpc.client import Boolean
@@ -24,9 +25,8 @@ def make_larger(self):
     global highlightOffButtonOffsetY, gameTypeButtonOffsetY, gameTypeCorpButtonOffsetY, optionScreenOffsetX, optionScreenOffsetY, tableOptionOffsetX
     global tableOptionOffsetY1, tableOptionOffsetY2, reStartbuttonfsize, corpButtonOffsetX, corpButtonOffsetY, capWhiteOffsetX, capWhiteOffsetY
     global whiteBoxOffsetX, whiteBoxOffsetY, whiteBoxH, whiteBoxW, capBlackOffsetX, capBlackOffsetY, blackBoxOffsetY, endButtonOffsetX
-    global endButtonOffsetY1, endButtonOffsetY2, restartButtonOffsetY, startButtonOffsetY
-
-    global screenSize,screentheme
+    global endButtonOffsetY1, endButtonOffsetY2, restartButtonOffsetY, startButtonOffsetY, sizeButtonOffset, sizeSmallButtonOffsetY
+    global sizeDefaultButtonOffsetY, sizeLargeButtonOffsetY, screenSize, screentheme, themeSplashX, themeSplashY
 
     screenSize = "large"
     # large
@@ -102,6 +102,12 @@ def make_larger(self):
     endButtonOffsetY2 = 30
     restartButtonOffsetY = 395
     startButtonOffsetY = 320
+    sizeButtonOffset = 445
+    sizeSmallButtonOffsetY = 107
+    sizeDefaultButtonOffsetY = 45
+    sizeLargeButtonOffsetY = 17
+    themeSplashX = 0
+    themeSplashY = 0
 
 def make_smaller(self):
     global squareSize, wSizew, wSizeh, sbSizew, bSizew, bSizeh, lSizew, lSizeh, blSizeh, helpScreenWidth, helpScreenHeight, themeButtonWidth
@@ -111,8 +117,8 @@ def make_smaller(self):
     global highlightOffButtonOffsetY, gameTypeButtonOffsetY, gameTypeCorpButtonOffsetY, optionScreenOffsetX, optionScreenOffsetY, tableOptionOffsetX
     global tableOptionOffsetY1, tableOptionOffsetY2, reStartbuttonfsize, corpButtonOffsetX, corpButtonOffsetY, capWhiteOffsetX, capWhiteOffsetY
     global whiteBoxOffsetX, whiteBoxOffsetY, whiteBoxH, whiteBoxW, capBlackOffsetX, capBlackOffsetY, blackBoxOffsetY, endButtonOffsetX
-    global endButtonOffsetY1, endButtonOffsetY2, restartButtonOffsetY, startButtonOffsetY
-    global screenSize,screentheme
+    global endButtonOffsetY1, endButtonOffsetY2, restartButtonOffsetY, startButtonOffsetY, sizeButtonOffset, sizeSmallButtonOffsetY
+    global sizeDefaultButtonOffsetY, sizeLargeButtonOffsetY, screenSize, screentheme, themeSplashX, themeSplashY
 
     screenSize = "small"
     # Small window
@@ -183,6 +189,12 @@ def make_smaller(self):
     endButtonOffsetY2 = 10
     restartButtonOffsetY = 205
     startButtonOffsetY = 180
+    sizeButtonOffset = 245
+    sizeSmallButtonOffsetY = 87
+    sizeDefaultButtonOffsetY = 45
+    sizeLargeButtonOffsetY = -3
+    themeSplashX = 0
+    themeSplashY = 0
 
 def make_default(self):
     global squareSize, wSizew, wSizeh, sbSizew, bSizew, bSizeh, lSizew, lSizeh, blSizeh, helpScreenWidth, helpScreenHeight, themeButtonWidth
@@ -192,9 +204,8 @@ def make_default(self):
     global highlightOffButtonOffsetY, gameTypeButtonOffsetY, gameTypeCorpButtonOffsetY, optionScreenOffsetX, optionScreenOffsetY, tableOptionOffsetX
     global tableOptionOffsetY1, tableOptionOffsetY2, reStartbuttonfsize, corpButtonOffsetX, corpButtonOffsetY, capWhiteOffsetX, capWhiteOffsetY
     global whiteBoxOffsetX, whiteBoxOffsetY, whiteBoxH, whiteBoxW, capBlackOffsetX, capBlackOffsetY, blackBoxOffsetY, endButtonOffsetX
-    global endButtonOffsetY1, endButtonOffsetY2, restartButtonOffsetY, startButtonOffsetY
-    global screenSize,screentheme
-
+    global endButtonOffsetY1, endButtonOffsetY2, restartButtonOffsetY, startButtonOffsetY, sizeButtonOffset, sizeSmallButtonOffsetY
+    global sizeDefaultButtonOffsetY, sizeLargeButtonOffsetY, screenSize, screentheme, themeSplashX, themeSplashY
     screenSize = "default"
     # Medium
     squareSize = 75
@@ -264,6 +275,12 @@ def make_default(self):
     endButtonOffsetY2 = 20
     restartButtonOffsetY = 300
     startButtonOffsetY = 250
+    sizeButtonOffset = 345
+    sizeSmallButtonOffsetY = 97
+    sizeDefaultButtonOffsetY = 45
+    sizeLargeButtonOffsetY = 8
+    themeSplashX = 0
+    themeSplashY = 0
 
 def corp_to_color(corp_num):
     colors = ['', 'rd', 'bl', 'gr']
@@ -511,6 +528,10 @@ class TileVis(QLabel):
 
     def set_img(self, atk):
         if self.is_active:
+            self.move_highlight.setStyleSheet("background-color: rgba(255,255,0,150)")
+            self.move_highlight.resize(squareSize, squareSize)
+            self.atk_highlight.setStyleSheet("background-color: rgba(255,69,0,150)")
+            self.atk_highlight.resize(squareSize, squareSize)
             self.atk_highlight.show() if atk else self.move_highlight.show()
         else:
             self.move_highlight.hide()
@@ -574,13 +595,13 @@ class BoardVis(QMainWindow):
         self.options.clicked.connect(self.theme_menu.show)
 
         # size selection menu
-        self.sizeOptions = QPushButton('change size', self)
-        self.sizeOptions.setFixedSize(sizeSelectWidth, sizeSelectHeight)
-        self.sizeOptions.setStyleSheet("background-color: rgba(255, 255, 255, 0);")
-        change_img = QPixmap('/Users/kpgunasingh/NewSenior/AIPlayableFLChess/picture/another-change-4.png')
-        change_icon = QIcon(change_img)
-        self.sizeOptions.setIconSize(QSize(sizeSelectWidth, sizeSelectHeight))
-        self.sizeOptions.show()
+        # self.sizeOptions = QPushButton('change size', self)
+        # self.sizeOptions.setFixedSize(sizeSelectWidth, sizeSelectHeight)
+        # self.sizeOptions.setStyleSheet("background-color: rgba(255, 255, 255, 0);")
+        # change_img = QPixmap('/Users/kpgunasingh/NewSenior/AIPlayableFLChess/picture/another-change-4.png')
+        # change_icon = QIcon(change_img)
+        # self.sizeOptions.setIconSize(QSize(sizeSelectWidth, sizeSelectHeight))
+        # self.sizeOptions.show()
         # self.sizeOptions.clicked.connect(self.sizeOptions.show())
 
         # This button allow you can stop your turn
@@ -674,30 +695,39 @@ class BoardVis(QMainWindow):
     def set_theme(self, theme:str = 'default'):
         themes = {
             'default': {
-                'splash': './picture/defaultChessSplash.png',
+                'splash': './picture/defaultChessSplash',
                 'color': 'rgb(0, 204, 204)',
                 'board': ('wt', 'bt', 'bt') #light_tile, dark_tile, border_tile
                 },
             'wood': {
-                'splash': './picture/woodChessSplash.png',
+                'splash': './picture/woodChessSplash',
                 'color': 'rgb(227, 217, 197)',
                 'board': ('lwt', 'dwt', 'lwt')
                 },
             'marble': {
-                'splash': './picture/marbleChessSplash.png',
+                'splash': './picture/marbleChessSplash',
                 'color': 'white',
                 'board': ('wmt', 'gmt', 'wmt')
                 },
         }
+        print(screenSize)
 
         if theme not in themes:
             print("didnt find theme")
             theme = "default"
 
+
         self.theme = themes[theme]
         splash_img = self.theme["splash"]
         color = self.theme["color"]
+        if screenSize == "large":
+            splash_img = splash_img + 'l.png'
+        elif  screenSize == "small":
+            splash_img = splash_img + 's.png'
+        else:
+            splash_img = splash_img + '.png'
 
+        print (splash_img)
         self.startScreen.setStyleSheet(f'background-image: url({splash_img});')
         self.pauseBackground.setStyleSheet(f'background-image: url({splash_img});')
 
@@ -982,7 +1012,7 @@ class BoardVis(QMainWindow):
         # Create StartScreen properties
         self.startScreen.setAlignment(Qt.AlignCenter)
         self.startScreen.resize(self.width(), self.height())
-        self.startScreen.setStyleSheet("background-image: url(./picture/defaultChessSplash.png);")
+        self.startScreen.setStyleSheet("background-image: url(./picture/defaultChessSplashLarge.png);")
         self.startScreen.move(0, 0)
 
         moveIntoSidePanel = ((self.width()-self.boardSize)/2)
@@ -1006,7 +1036,7 @@ class BoardVis(QMainWindow):
         self.pauseBackground.setAlignment(Qt.AlignCenter)
         self.pauseBackground.resize(self.width(), self.height())
         self.pauseBackground.setStyleSheet('background-color: black')
-        self.pauseBackground.setStyleSheet("background-image: url(./picture/defaultChessSplash.png);")
+        self.pauseBackground.setStyleSheet("background-image: url(./picture/defaultChessSplashLarge.png);")
         self.pauseBackground.move(0, 0)
         self.pauseBackground.hide()
 
@@ -1050,8 +1080,8 @@ class BoardVis(QMainWindow):
         font.setPixelSize(self.smallSelectButton.height() * 0.4)
         self.smallSelectButton.setFont(font)
         self.smallSelectButton.move(
-            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - 345
-            , int((self.boardSize / 2) + startButtonOffsetY - 97))
+            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - sizeButtonOffset
+            , int((self.boardSize / 2) + startButtonOffsetY - sizeSmallButtonOffsetY))
         self.smallSelectButton.hide()
 
         # set up for large size selector
@@ -1062,8 +1092,8 @@ class BoardVis(QMainWindow):
         font.setPixelSize(self.largeSelectButton.height() * 0.4)
         self.largeSelectButton.setFont(font)
         self.largeSelectButton.move(
-            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - 345
-            , int((self.boardSize / 2) + startButtonOffsetY + 7))
+            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - sizeButtonOffset
+            , int((self.boardSize / 2) + startButtonOffsetY + sizeLargeButtonOffsetY))
         self.largeSelectButton.hide()
 
         # set up for selecting revert to default
@@ -1074,8 +1104,8 @@ class BoardVis(QMainWindow):
         font.setPixelSize(self.revertDefault.height() * 0.4)
         self.revertDefault.setFont(font)
         self.revertDefault.move(
-            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - 345
-            , int((self.boardSize / 2) + startButtonOffsetY - 45))
+            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - sizeButtonOffset
+            , int((self.boardSize / 2) + startButtonOffsetY - sizeDefaultButtonOffsetY))
         self.revertDefault.hide()
 
         #set up team text properties
@@ -1242,6 +1272,7 @@ class BoardVis(QMainWindow):
                                   self.tableOption.height()) * 0.5 + tableOptionOffsetY2)
         self.tableOption.hide()
 
+
         # Create show information of move indicator
 
         self.moveIndicator.resize(lSizew, lSizeh)
@@ -1342,11 +1373,14 @@ class BoardVis(QMainWindow):
         self.helperButton.show()
         self.helperButton.raise_()
 
+
         # Create StartScreen properties
         self.startScreen.setAlignment(Qt.AlignCenter)
         self.startScreen.resize(self.width(), self.height())
-        self.startScreen.setStyleSheet("background-image: url(./picture/defaultChessSplash.png);")
-        self.startScreen.move(0, 0)
+        # self.startScreen.setStyleSheet("background-image: url(./picture/defaultChessSplash.png);")
+        self.startScreen.setStyleSheet("border-image: url(./picture/defaultChessSplash.png) 0 0 0 0 stretch stretch;")
+        print("border image")
+        self.startScreen.move(themeSplashX, themeSplashY)
 
         moveIntoSidePanel = ((self.width() - self.boardSize) / 2)
 
@@ -1413,8 +1447,8 @@ class BoardVis(QMainWindow):
         font.setPixelSize(self.smallSelectButton.height() * 0.4)
         self.smallSelectButton.setFont(font)
         self.smallSelectButton.move(
-            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - 280
-            , int((self.boardSize / 2) + startButtonOffsetY - 97))
+            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - sizeButtonOffset
+            , int((self.boardSize / 2) + startButtonOffsetY - sizeSmallButtonOffsetY))
         self.smallSelectButton.hide()
 
         # set up for large size selector
@@ -1425,8 +1459,8 @@ class BoardVis(QMainWindow):
         font.setPixelSize(self.largeSelectButton.height() * 0.4)
         self.largeSelectButton.setFont(font)
         self.largeSelectButton.move(
-            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - 280
-            , int((self.boardSize / 2) + startButtonOffsetY + 7))
+            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - sizeButtonOffset
+            , int((self.boardSize / 2) + startButtonOffsetY + sizeLargeButtonOffsetY))
         self.largeSelectButton.hide()
 
         # set up for selecting revert to default
@@ -1437,8 +1471,8 @@ class BoardVis(QMainWindow):
         font.setPixelSize(self.revertDefault.height() * 0.4)
         self.revertDefault.setFont(font)
         self.revertDefault.move(
-            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - 280
-            , int((self.boardSize / 2) + startButtonOffsetY - 45))
+            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - sizeButtonOffset
+            , int((self.boardSize / 2) + startButtonOffsetY - sizeDefaultButtonOffsetY))
         self.revertDefault.hide()
 
         # set up team text properties
@@ -2551,9 +2585,17 @@ class displayRules(QWebEngineView):
         self.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, True)
         self.setWindowTitle("Chess Rules")
+        self.load(QUrl.fromLocalFile(QDir.current().filePath("FL-Chess__DistAI_V5d.pdf")))
+        # self.browser = QWebEngineView()
+        # current_dir = os.path.dirname(os.path.realpath("/Users/kpgunasingh/NewSenior/AIPlayableFLChess/viewer.html"))
+        # filename = os.path.join(current_dir, "viewer.html")
         #self.load(QUrl.fromLocalFile(QDir.current().filePath('viewer.html')))
         # url = QUrl("http://localhost:63342/AIPlayableFLChess/viewer.html?_ijt=ni08m56q8ooig04o54nbs7pt1d&_ij_reload=RELOAD_ON_SAVE")
         #self.load(QUrl.fromLocalFile(QDir.current().filePath("viewer.html")))
+        # self.load(QUrl(f"http://localhost/AIPlayableFLChess/viewer.html"))
+        # url = QUrl.fromLocalFile(filename)
+        # self.browser.setUrl(url)
+        # self.setCentralWidget(self.browser)
 
-        self.load(QUrl(f"http://localhost:63342/AIPlayableFLChess/viewer.html"))
+
 
