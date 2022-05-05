@@ -182,6 +182,9 @@ class PieceVis(QLabel):
         self.end = screen_to_board(ev.windowPos().x(), ev.windowPos().y(), self.parent().tileSize)      # set new end pos
                    # set movement val on board object
         print(self.start, self.end)
+        if pc:= self.parent().moving_piece:
+            self.parent().tilePos[pc.start[1]][pc.start[0]].toggle_as_source(False)
+        self.parent().tilePos[self.start[1]][self.start[0]].toggle_as_source(True)
         if self.same_loc(self.start, self.end):
             # we did not move, just clicked the piece, store it on the board object as start of click to move
             self.set_h_mode(not self._h_mode)   # highlighting logic
@@ -201,13 +204,17 @@ class PieceVis(QLabel):
         self.parent().remove_all_h()
         if self._h_mode:
             self.parent().add_group_h(self.moves)
+        else:
+            self.parent().tilePos[self.start[1]][self.start[0]].toggle_as_source(False)
 
         if drag_move:
             self.parent().setMoveStart(self.start)
             self.parent().move_end = self.end
+            self.parent().tilePos[self.start[1]][self.start[0]].toggle_as_source(False)
             self.parent().do_piece_move(self, drag_move)
 
         if click_end:
+            self.parent().tilePos[self.start[1]][self.start[0]].toggle_as_source(False)
             self.parent().move_end = self.end
             self.parent().do_piece_move(None)
 
@@ -225,6 +232,10 @@ class TileVis(QLabel):
         self.atk_highlight = QLabel(parent=self)
         self.atk_highlight.setStyleSheet("background-color: rgba(255,69,0,150)")
         self.atk_highlight.resize(75, 75)
+        self.src_highlight = QLabel(parent=self)
+        self.src_highlight.setStyleSheet("background-color: rgba(77,148,219,150)")
+        self.src_highlight.resize(75, 75)
+        self.src_highlight.hide()
         self.default_vis = QPixmap('./picture/' + visual)
         self.set_img(False)
 
@@ -243,6 +254,9 @@ class TileVis(QLabel):
             self.move_highlight.hide()
             self.atk_highlight.hide()
             self.setPixmap(self.default_vis)
+
+    def toggle_as_source(self, on:bool):
+        self.src_highlight.show() if on else self.src_highlight.hide()
 
     def get_active(self):
         return self.is_active
@@ -355,6 +369,7 @@ class BoardVis(QMainWindow):
         self.diceRollResult = -1
         self.attacked_loc = (-1,-1)
 
+        self.src_loc = (-1, -1)
 
         self.sbs_delay_ms = 400
 
@@ -457,6 +472,9 @@ class BoardVis(QMainWindow):
         piece.set_h_mode(False)
         self.remove_all_h()
 
+        self.src_loc = (self.move_start[0], self.move_start[1])
+        self.tilePos[self.src_loc[1]][self.src_loc[0]].toggle_as_source(True)
+
         self.current_player_white = self.controller.tracker.current_player
         isAttack = (self.move_end[0], self.move_end[1], True) in piece.moves
         moveSuccessful = self.attackSuccess = self.controller.move_piece(
@@ -486,6 +504,7 @@ class BoardVis(QMainWindow):
                 self.attacked_loc = (self.move_end[0], self.move_end[1])
                 self.roll_dice()
             else:
+                self.tilePos[self.src_loc[1]][self.src_loc[0]].toggle_as_source(False)
                 self._update_pieces()
                 self.update_captured_pieces()
                 self.make_AI_move()
@@ -1032,8 +1051,11 @@ class BoardVis(QMainWindow):
         to_x, to_y = ai_mv[0], ai_mv[1]
         from_x, from_y = ai_mv[4], ai_mv[5]
         ai_mv_piece = self.piecePos[from_y][from_x]
-        if type(ai_mv_piece).__name__ != 'PieceVis':
+        if not type(ai_mv_piece) is PieceVis:
             return
+
+        self.src_loc = (from_x, from_y)
+        self.tilePos[self.src_loc[1]][self.src_loc[0]].toggle_as_source(True)
 
         isAttack = (to_x, to_y, True) in self.controller.get_possible_moves_for_piece_at(x=from_x, y=from_y)
         if isAttack:
@@ -1060,7 +1082,7 @@ class BoardVis(QMainWindow):
             self.update_labels()
             if isAttack:
                 self.attacked_loc = (to_x, to_y)
-                no_pc = type(target_piece).__name__ != 'PieceVis'
+                no_pc = not type(target_piece) is PieceVis
                 self.ai_attack_info = {
                     'fromx': str(chr(65+from_x)),
                     'fromy': (8-from_y),
@@ -1073,6 +1095,7 @@ class BoardVis(QMainWindow):
                 }
                 self.roll_dice()
             else:
+                self.tilePos[self.src_loc[1]][self.src_loc[0]].toggle_as_source(False)
                 self._update_pieces()
                 self.update_captured_pieces()
                 self.make_AI_move()
@@ -1805,6 +1828,8 @@ class DiceRoll(QWidget):
         self.mainwin._update_pieces()
         self.mainwin.update_captured_pieces()
         self.attackedTile.set_active(False, True)
+        src_x, src_y = self.mainwin.src_loc
+        self.mainwin.tilePos[src_y][src_x].toggle_as_source(False)
 
         self.rollingText.hide()
         self.rollDiceAnimation.hide()
