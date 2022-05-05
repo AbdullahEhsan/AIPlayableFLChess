@@ -1,16 +1,17 @@
 from math import floor
 from typing import Tuple
-from PyQt5.QtCore import Qt, QPoint, QSize, QTimer, QCoreApplication, QDir, QUrl
+from PyQt5.QtCore import Qt, QPoint, QSize, QTimer, QDir, QUrl
 from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, QGridLayout, \
-    QComboBox, QRadioButton, QButtonGroup
+    QComboBox, QRadioButton, QButtonGroup, QDesktopWidget
 from PyQt5.QtGui import QPixmap, QMouseEvent, QFont, QMovie, QIcon
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings, QWebEnginePage
 
 from ChessAI import AIFunctions as AIPlayer
 from ChessGame import Game as chess_game
 
-game_over = False
-ai_turn = False
+game_is_over = False
+ai_is_playing = False
+dice_is_rolling = False
 
 def corp_to_color(corp_num):
     colors = ['', 'rd', 'bl', 'gr']
@@ -106,7 +107,7 @@ class PieceVis(QLabel):
     def should_freeze(self):
         tile_not_active = not self.parent().tilePos[self.start[1]][self.start[0]].get_active()
 
-        return game_over or ai_turn or (tile_not_active and self.not_same_team())
+        return game_is_over or ai_is_playing or dice_is_rolling or (tile_not_active and self.not_same_team())
 
     def mousePressEvent(self, ev: QMouseEvent) -> None:
         if self.should_freeze():
@@ -120,7 +121,7 @@ class PieceVis(QLabel):
     # Set the region limits of the board that the piece can move to
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:
         # doesn't use should_freeze to allow for attacks
-        if game_over or ai_turn or self.not_same_team():
+        if game_is_over or ai_is_playing or dice_is_rolling or self.not_same_team():
             return
         if ((ev.globalPos() - self.parent().pos()) - QPoint(0, 30)).x() < (0 + (self.parent().tileSize / 2)) \
                 and ((ev.globalPos() - self.parent().pos()) - QPoint(0, 30)).y() < \
@@ -182,6 +183,9 @@ class PieceVis(QLabel):
         self.end = screen_to_board(ev.windowPos().x(), ev.windowPos().y(), self.parent().tileSize)      # set new end pos
                    # set movement val on board object
         print(self.start, self.end)
+        if pc:= self.parent().moving_piece:
+            self.parent().tilePos[pc.start[1]][pc.start[0]].toggle_as_source(False)
+        self.parent().tilePos[self.start[1]][self.start[0]].toggle_as_source(True)
         if self.same_loc(self.start, self.end):
             # we did not move, just clicked the piece, store it on the board object as start of click to move
             self.set_h_mode(not self._h_mode)   # highlighting logic
@@ -201,13 +205,17 @@ class PieceVis(QLabel):
         self.parent().remove_all_h()
         if self._h_mode:
             self.parent().add_group_h(self.moves)
+        else:
+            self.parent().tilePos[self.start[1]][self.start[0]].toggle_as_source(False)
 
         if drag_move:
             self.parent().setMoveStart(self.start)
             self.parent().move_end = self.end
+            self.parent().tilePos[self.start[1]][self.start[0]].toggle_as_source(False)
             self.parent().do_piece_move(self, drag_move)
 
         if click_end:
+            self.parent().tilePos[self.start[1]][self.start[0]].toggle_as_source(False)
             self.parent().move_end = self.end
             self.parent().do_piece_move(None)
 
@@ -225,6 +233,10 @@ class TileVis(QLabel):
         self.atk_highlight = QLabel(parent=self)
         self.atk_highlight.setStyleSheet("background-color: rgba(255,69,0,150)")
         self.atk_highlight.resize(75, 75)
+        self.src_highlight = QLabel(parent=self)
+        self.src_highlight.setStyleSheet("background-color: rgba(77,148,219,150)")
+        self.src_highlight.resize(75, 75)
+        self.src_highlight.hide()
         self.default_vis = QPixmap('./picture/' + visual)
         self.set_img(False)
 
@@ -232,17 +244,20 @@ class TileVis(QLabel):
         self.default_vis = new_pixmap
         self.set_img(False)
 
-    def set_active(self, val, atk=False):
+    def set_active(self, val:bool, atk=False):
         self.is_active = val
         self.set_img(atk)
 
-    def set_img(self, atk):
+    def set_img(self, atk:bool):
         if self.is_active:
             self.atk_highlight.show() if atk else self.move_highlight.show()
         else:
             self.move_highlight.hide()
             self.atk_highlight.hide()
             self.setPixmap(self.default_vis)
+
+    def toggle_as_source(self, on:bool):
+        self.src_highlight.show() if on else self.src_highlight.hide()
 
     def get_active(self):
         return self.is_active
@@ -278,6 +293,7 @@ class BoardVis(QMainWindow):
         self.setWindowTitle("AIFLChess")
         self.highlighted = []
         self.corp_menu = CorpMenu(self)
+        self.boardSize = 0
 
         self.tileSize = 75
         self.boardSize = self.tileSize * 9.5
@@ -295,6 +311,7 @@ class BoardVis(QMainWindow):
         gear_icon = QIcon(gear_image)
         self.options.setIcon(gear_icon)
         self.options.setIconSize(QSize(50,50))
+        self.options.move(10,10)
         self.options.clicked.connect(self.theme_menu.show)
 
 
@@ -344,9 +361,6 @@ class BoardVis(QMainWindow):
         self.blackTeamText = QLabel(self)
         self.highlightText = QLabel(self)
         self.gameTypeText = QLabel(self)
-        self.winConText = QLabel(self)
-        self.loseText = QLabel(self)
-
         #set up the buttons
         self.startGameButton= QPushButton("Start game",self)
 
@@ -360,15 +374,12 @@ class BoardVis(QMainWindow):
         self.medievalButton = QRadioButton("Medieval", self)
         self.corpCommanderButton = QRadioButton("Corp Command", self)
 
-        # Set up the roll dice screen
-        self.diceRollScreen = QLabel(self)
-        self.rollText = QLabel(self)
-        self.rollDiceAnimation = QLabel(self)
-        self.resultCaptureText = QLabel(self)
-        self.aiPieceInfoText = QLabel(self)
-        self.okayButton = QPushButton("Return to Board", self)
+        self.roll_dice_window = DiceRoll(self)
         self.attackSuccess = None
         self.diceRollResult = -1
+        self.attacked_loc = (-1,-1)
+
+        self.src_loc = (-1, -1)
 
         self.sbs_delay_ms = 400
 
@@ -384,11 +395,15 @@ class BoardVis(QMainWindow):
         self.theme = None
 
         self.current_player_white = 1
-        self.conpic = QLabel(self)
-        self.conpic1 = QLabel(self)
-        self.conpic2 = QLabel(self)
-        self.lospic = QLabel(self)
-        self.restartton = QPushButton('Restart', self)
+
+        self.ending_bg = QLabel(self)
+        self.winnerText = QLabel(self)
+        self.loserText = QLabel(self)
+        self.firework0 = QLabel(self)
+        self.firework1 = QLabel(self)
+        self.firework2 = QLabel(self)
+        self.cryface = QLabel(self)
+        self.return_to_start = QPushButton('Return to Start', self)
 
         self.showBoard()
 
@@ -421,7 +436,6 @@ class BoardVis(QMainWindow):
         color = self.theme["color"]
 
         self.startScreen.setStyleSheet(f'background-image: url({splash_img});')
-        self.diceRollScreen.setStyleSheet(f'background-image: url({splash_img});')
 
         button_css = f'''
             QPushButton {{
@@ -449,13 +463,6 @@ class BoardVis(QMainWindow):
 
         self.startGameButton.setStyleSheet(button_css)
 
-        # roll dice screen
-        self.rollText.setStyleSheet(alt_text_css)
-        self.resultCaptureText.setStyleSheet(alt_text_css)
-        self.aiPieceInfoText.setStyleSheet(text_css+';background-color: rgba(0, 0, 0, 0.8)')
-
-        self.okayButton.setStyleSheet(button_css)
-
         self.helperButton.setStyleSheet(f'''
             QPushButton {{
                 font-family: "Times New Roman";
@@ -472,10 +479,9 @@ class BoardVis(QMainWindow):
             }}
             ''')
         #End Game screen
-        self.winConText.setStyleSheet(alt_text_css)
-        self.restartton.setStyleSheet(button_css)
-        self.loseText.setStyleSheet(alt_text_css)
-
+        self.winnerText.setStyleSheet(alt_text_css)
+        self.return_to_start.setStyleSheet(button_css)
+        self.loserText.setStyleSheet(alt_text_css)
 
         # board
         self.set_non_playables()
@@ -491,11 +497,17 @@ class BoardVis(QMainWindow):
             piece = self.moving_piece
         piece.set_h_mode(False)
         self.remove_all_h()
+
+        self.src_loc = (self.move_start[0], self.move_start[1])
+        self.tilePos[self.src_loc[1]][self.src_loc[0]].toggle_as_source(True)
+
         self.current_player_white = self.controller.tracker.current_player
         isAttack = (self.move_end[0], self.move_end[1], True) in piece.moves
-        moveSuccessful = self.controller.move_piece(from_x=self.move_start[0], from_y=self.move_start[1],
+        moveSuccessful = self.attackSuccess = self.controller.move_piece(
+                                                    from_x=self.move_start[0], from_y=self.move_start[1],
                                                     to_x=self.move_end[0], to_y=self.move_end[1])
         self.diceRollResult = self.controller.get_result_of_dice_roll()
+
         new_spots = []
         if moveSuccessful:
             for x, y in self.controller.get_move_path():
@@ -507,8 +519,22 @@ class BoardVis(QMainWindow):
             piece.start[1] = self.move_end[1]
         else:
             new_spot = board_to_screen(self.move_start[0], self.move_start[1], self.tileSize)
+
         print("moved piece: ", piece)
-        # piece.move(new_spot[0], new_spot[1])
+
+        def updates():
+            if game_is_over:
+                return
+            self.update_labels()
+            if isAttack:
+                self.attacked_loc = (self.move_end[0], self.move_end[1])
+                self.roll_dice()
+            else:
+                self.tilePos[self.src_loc[1]][self.src_loc[0]].toggle_as_source(False)
+                self._update_pieces()
+                self.update_captured_pieces()
+                self.make_AI_move()
+
         if len(new_spots)>1 and not dragged:
             new_spots.reverse()
 
@@ -517,6 +543,7 @@ class BoardVis(QMainWindow):
             def spot_by_spot():
                 if len(new_spots)==0:
                     sbs_delay.stop()
+                    updates()
                     return
                 x, y = new_spots.pop()
                 print(x,y)
@@ -525,15 +552,7 @@ class BoardVis(QMainWindow):
             sbs_delay.timeout.connect(spot_by_spot)
             sbs_delay.start(self.sbs_delay_ms)
         else:
-            piece.move(new_spot[0], new_spot[1])
-
-        if isAttack:
-            self._update_pieces()
-            self.rollDiceScreen(moveSuccessful)
-        else:
-            self.make_AI_move() #TODO: find place for this after update pieces is fixed
-
-        self.update_labels()
+            updates()
 
         self.reset_movement_data()
 
@@ -725,27 +744,6 @@ class BoardVis(QMainWindow):
                                  int((self.boardSize / 2) - 300))
         self.welcomeText.hide()
 
-        self.options.move(self.tileSize/6, self.tileSize/6)
-
-        # Create start screen properties
-        self.diceRollScreen.setAlignment(Qt.AlignCenter)
-        self.diceRollScreen.resize(925, 675)
-        self.diceRollScreen.setStyleSheet('background-color: rgba(0,0,0,1)')
-        self.diceRollScreen.setStyleSheet("background-image: url(./picture/defaultChessSplash.png);")
-        self.diceRollScreen.move(0, 0)
-        self.diceRollScreen.hide()
-
-        # Set up for okay button properties
-        self.okayButton.clicked.connect(self.okayButtonClicked)
-        self.okayButton.resize(150, 40)
-        font = QFont()
-        font.setFamily('Arial')
-        font.setPixelSize(self.okayButton.height() * 0.4)
-        self.okayButton.setFont(font)
-        self.okayButton.move(int((self.boardSize / 2) - (self.okayButton.width() / 2)) + moveIntoSidePanel
-                             , int((self.boardSize / 2) + 250))
-        self.okayButton.hide()
-
         #set up the option screen properties
         self.optionScreen.setAlignment(Qt.AlignCenter)
         self.optionScreen.resize(self.boardSize / 1.5, self.boardSize / 2)
@@ -896,142 +894,130 @@ class BoardVis(QMainWindow):
         self.medievalButton.adjustSize()
         self.corpCommanderButton.adjustSize()
 
+        # set up the win congratulation screen properties
+        self.ending_bg.setAlignment(Qt.AlignCenter)
+        self.ending_bg.resize(self.width(), self.height())
+        self.ending_bg.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
+        self.ending_bg.move(0, 0)
+        self.ending_bg.hide()
+
+        pic = QMovie('./picture/sad.gif')
+        self.cryface.setMovie(pic)
+        self.cryface.resize(400, 500)
+        self.cryface.move((self.width()/2)-self.cryface.width()/2, 200)
+        self.cryface.raise_()
+        self.cryface.hide()
+
+        pic0 = QMovie('./picture/cr1.gif')
+        self.firework0.setMovie(pic0)
+        self.firework0.resize(300, 300)
+        self.firework0.move(0, 200)
+        self.firework0.raise_()
+        self.firework0.hide()
+
+        pic1 = QMovie('./picture/cr2.gif')
+        self.firework1.setMovie(pic1)
+        self.firework1.resize(500, 300)
+        self.firework1.move(500, 50)
+        self.firework1.raise_()
+        self.firework1.hide()
+
+        pic2 = QMovie('./picture/cr3.gif')
+        self.firework2.setMovie(pic2)
+        self.firework2.resize(300, 300)
+        self.firework2.move(600, 300)
+        self.firework2.raise_()
+        self.firework2.hide()
+
+        self.return_to_start.clicked.connect(self.returnToStartScreen)
+        self.return_to_start.resize(150, 40)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.return_to_start.height() * 0.4)
+        self.return_to_start.setFont(font)
+        self.return_to_start.move(int((self.boardSize / 2) - (self.return_to_start.width() / 2)) + moveIntoSidePanel
+                            , int((self.boardSize / 2) + 250))
+        self.return_to_start.raise_()
+        self.return_to_start.hide()
+
+        self.winnerText.resize(900, 100)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.winnerText.height() * .4)
+        self.winnerText.setFont(font)
+        self.winnerText.move(0, self.height() / 2 - 100)
+        self.winnerText.setAlignment(Qt.AlignCenter)
+        self.winnerText.raise_()
+        self.winnerText.hide()
+
+        self.loserText.setAlignment(Qt.AlignCenter)
+        self.loserText.setText("You lose!\nYour king was captured by the enemy!")
+        self.loserText.resize(900, 100)
+        font1 = QFont()
+        font1.setFamily('Arial')
+        font1.setPixelSize(self.loserText.height() * 0.4)
+        self.loserText.setFont(font1)
+        self.loserText.move(0, self.height() / 2 - 150)
+        self.loserText.raise_()
+        self.loserText.hide()
+
         self.set_theme()
+        self.roll_dice_window = DiceRoll(self)
 
         self.captured_by = {
             "white": [],
             "black": []
         }
 
-        # set up the win congratulation screen properties
-        self.winCon = QLabel(self)
-        self.winCon.setAlignment(Qt.AlignCenter)
-        self.winCon.resize(925, 675)
-        self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
-        self.winCon.move(0, 0)
-        self.winCon.hide()
 
     def loseScreen(self):
-        # set up the win congratulation screen properties
-        self.winCon = QLabel(self)
-        self.winCon.setAlignment(Qt.AlignCenter)
-        self.winCon.resize(925, 675)
-        self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
-        self.winCon.move(0, 0)
-        self.winCon.show()
+        self.ending_bg.show()
+        self.ending_bg.raise_()
 
-        # set up the win congratulation screen text properties
-        self.loseText.setAlignment(Qt.AlignCenter)
-        self.loseText.setText("You lose!"
-                                "\nYour king was captured by the enemy!")
-        self.loseText.resize(900, 100)
-        font1 = QFont()
-        font1.setFamily('Arial')
-        font1.setPixelSize(self.loseText.height() * 0.4)
-        self.loseText.setFont(font1)
-        self.loseText.move(0, self.height() / 2 - 170)
-        self.loseText.show()
-        self.loseText.raise_()
+        self.cryface.show()
+        self.cryface.raise_()
+        self.cryface.movie().start()
 
+        self.loserText.show()
+        self.loserText.raise_()
 
-        pic = QMovie('./picture/sad.gif')
-        self.lospic.setMovie(pic)
-        self.lospic.resize(400, 500)
-        self.lospic.move(300, 200)
-        pic.start()
-        self.lospic.show()
-        self.lospic.raise_()
-
-        # set quit button
-        self.__set_button(self.quitButton, 0.9)
-        self.quitButton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 200
-                            , int((self.boardSize / 2) + 250))
-        self.quitButton.clicked.connect(QCoreApplication.instance().quit)
-        self.quitButton.show()
-        self.quitButton.raise_()
-
-        # set restart button
-        self.__set_button(self.restartton, 0.9)
-        self.restartton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 80
-                            , int((self.boardSize / 2) + 250))
-        self.restartton.clicked.connect(self.returnToStartScreen2)
-        self.restartton.show()
-        self.restartton.raise_()
+        self.return_to_start.show()
+        self.return_to_start.raise_()
 
     def congratulations(self):
-        # set up the win congratulation screen properties
-        self.winCon = QLabel(self)
-        self.winCon.setAlignment(Qt.AlignCenter)
-        self.winCon.resize(925, 675)
-        self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
-        self.winCon.move(0, 0)
-        self.winCon.show()
+        self.ending_bg.show()
+        self.ending_bg.raise_()
 
-        self.conpic = QLabel(self)
-        pic = QMovie('./picture/cr1.gif')
-        self.conpic.setMovie(pic)
-        self.conpic.resize(300, 300)
-        self.conpic.move(0, 200)
-        pic.start()
-        self.conpic.show()
+        self.firework0.show()
+        self.firework0.raise_()
 
-        self.conpic1 = QLabel(self)
-        pic1 = QMovie('./picture/cr2.gif')
-        self.conpic1.setMovie(pic1)
-        self.conpic1.resize(500, 300)
-        self.conpic1.move(500, 50)
-        pic1.start()
-        self.conpic1.show()
+        self.firework1.show()
+        self.firework1.raise_()
 
-        self.conpic2 = QLabel(self)
-        pic2 = QMovie('./picture/cr3.gif')
-        self.conpic2.setMovie(pic2)
-        self.conpic2.resize(300, 300)
-        self.conpic2.move(600, 300)
-        pic2.start()
-        self.conpic2.show()
+        self.firework2.show()
+        self.firework2.raise_()
+
+        self.firework0.movie().start()
+        self.firework1.movie().start()
+        self.firework2.movie().start()
 
         # set up the win congratulation screen text properties
         if (self.current_player_white and self.whiteHumanButton.isChecked()) or (
                 not self.current_player_white and self.blackHumanButton.isChecked()) \
                 or (self.whiteHumanButton.isChecked() and self.blackHumanButton.isChecked()):
-            self.winConText.setAlignment(Qt.AlignCenter)
-            self.winConText.setText("Congratulations! "
+            self.winnerText.setText("Congratulations! "
                                     "\nWinner: " +
                                     ("White" if self.current_player_white else "Black") +
                                     " Team!")
         else:
-            self.winConText.setAlignment(Qt.AlignCenter)
-            self.winConText.setText("Winner: " +
+            self.winnerText.setText("Winner: " +
                                     ("White" if self.current_player_white else "Black") +
                                     " Team!")
-        self.winConText.resize(900, 100)
-        font = QFont()
-        font.setFamily('Arial')
-        font.setPixelSize(self.winConText.height() * .4)
-        self.winConText.setFont(font)
-        self.winConText.move(0, self.height() / 2 - 100)
-        self.winConText.show()
-        self.winConText.raise_()
+        self.winnerText.show()
+        self.winnerText.raise_()
 
-        # set restart button
-        self.__set_button(self.restartton, 0.9)
-        self.restartton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + 130
-                            , int((self.boardSize / 2) + 250))
-        self.restartton.clicked.connect(self.returnToStartScreen2)
-        self.restartton.show()
-        self.restartton.raise_()
-
-    def returnToStartScreen2(self):
-        self.restartton.hide()
-        self.winConText.hide()
-        self.winCon.hide()
-        self.conpic.hide()
-        self.conpic1.hide()
-        self.conpic2.hide()
-        self.loseText.hide()
-        self.lospic.hide()
-        self.returnToStartScreen()
+        self.return_to_start.show()
+        self.return_to_start.raise_()
 
     def update_captured_pieces(self):
         # grab new list of captured piece labels
@@ -1060,65 +1046,22 @@ class BoardVis(QMainWindow):
             self.wCapLayout.addWidget(white)
             self.bCapLayout.addWidget(black)
 
-        # current_group = self.wCapturedFrame.layout.itemAt(0).widget()
-        # if not current_group:
-
-        # self.col_layouts[i-1].replaceWidget(current_group, new_piece_group)
-        # current_group.setParent(None)
-
-
-
-
-    """ def updated_captured_by(self, color:str):
-        if color == 'white':
-            starting = 425
-        elif color == 'black':
-            starting = 130
-        else:
-            return
-
-        captured = [piece_to_img_name(piece[0]).lower()+".png" for piece in self.controller.get_pieces_captured_by(color)]
-
-        self.captured_by[color] = []
-
-        img_size = 35
-        offset = 40
-        for i, pc in enumerate(captured):
-
-            captured_pc = QLabel(self)
-            captured_pc.setAlignment(Qt.AlignCenter)
-            cap = QPixmap('./picture/' + pc)
-            cap = cap.scaled(img_size, img_size)
-            captured_pc.setPixmap(cap)
-            captured_pc.resize(img_size, img_size)
-            captured_pc.move(
-                int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 10 + (img_size*(i%5)),
-                    starting + (offset*int(i/5))
-            )
-            self.captured_by[color].append(captured_pc)
-            # setattr(self, "wCapturedPic{}".format(i), self.wCapturedPic) """
-
-
-
-    def delete_captured_pieces(self):
-        for team in self.captured_by.values():
-            for captured in team:
-                captured.setParent(None)
-
     def make_AI_move(self):
-        global ai_turn
-        ai_turn = True
-        if game_over:
+        global ai_is_playing
+        ai_is_playing = True
+        self.endTurnButton.hide()
+        if game_is_over:
             return
         if self.whiteAIButton.isChecked() and self.blackAIButton.isChecked():
             if self.controller.is_game_over():
-                ai_turn = False
+                ai_is_playing = False
                 self.handle_gameover()
                 return
             self.ai_player = self.ai_v_ai_players[self.controller.tracker.current_player]
         else:
             if not self.ai_player or self.ai_turn_over():
-                ai_turn = False
+                ai_is_playing = False
+                self.endTurnButton.show()
                 return      # ai not selected, bail out of function
         self.ai_move_delay.start(self.ai_move_delay_ms)
 
@@ -1140,14 +1083,17 @@ class BoardVis(QMainWindow):
         to_x, to_y = ai_mv[0], ai_mv[1]
         from_x, from_y = ai_mv[4], ai_mv[5]
         ai_mv_piece = self.piecePos[from_y][from_x]
-        if type(ai_mv_piece).__name__ != 'PieceVis':
+        if not type(ai_mv_piece) is PieceVis:
             return
+
+        self.src_loc = (from_x, from_y)
+        self.tilePos[self.src_loc[1]][self.src_loc[0]].toggle_as_source(True)
 
         isAttack = (to_x, to_y, True) in self.controller.get_possible_moves_for_piece_at(x=from_x, y=from_y)
         if isAttack:
             target_piece = self.piecePos[to_y][to_x]
 
-        moveSuccessful = self.controller.move_piece(from_x=from_x, from_y=from_y,
+        moveSuccessful = self.attackSuccess = self.controller.move_piece(from_x=from_x, from_y=from_y,
                                                     to_x=to_x, to_y=to_y)
         self.diceRollResult = self.controller.get_result_of_dice_roll()
 
@@ -1163,13 +1109,12 @@ class BoardVis(QMainWindow):
             new_spot = board_to_screen(from_x, from_y, self.tileSize)
 
         def updates():
-            if game_over:
+            if game_is_over:
                 return
-            self._update_pieces()
             self.update_labels()
-            self.update_captured_pieces()
             if isAttack:
-                no_pc = type(target_piece).__name__ != 'PieceVis'
+                self.attacked_loc = (to_x, to_y)
+                no_pc = not type(target_piece) is PieceVis
                 self.ai_attack_info = {
                     'fromx': str(chr(65+from_x)),
                     'fromy': (8-from_y),
@@ -1180,8 +1125,11 @@ class BoardVis(QMainWindow):
                     'toclr': "" if no_pc else target_piece.color.title(),
                     'totype': "" if no_pc else target_piece.piece_type
                 }
-                self.rollDiceScreen(moveSuccessful)
+                self.roll_dice()
             else:
+                self.tilePos[self.src_loc[1]][self.src_loc[0]].toggle_as_source(False)
+                self._update_pieces()
+                self.update_captured_pieces()
                 self.make_AI_move()
 
 
@@ -1213,8 +1161,8 @@ class BoardVis(QMainWindow):
 
 
     def handle_gameover(self):
-        global game_over
-        game_over = True
+        global game_is_over
+        game_is_over = True
         self.endTurnButton.hide()
         self.moveIndicator.hide()
         self.tableOption.setText("Winner: " +
@@ -1223,8 +1171,9 @@ class BoardVis(QMainWindow):
         return
 
     def startGameClicked(self):
-        global game_over
-        game_over = False
+        global game_is_over, ai_is_playing, dice_is_rolling
+        game_is_over, ai_is_playing, dice_is_rolling = False, False, False
+
 
         self.theme_menu.close()
         if self.medievalButton.isChecked():
@@ -1247,6 +1196,7 @@ class BoardVis(QMainWindow):
             self.h_mode = False
 
         self.hideStartScreen()
+        self.hideEnding()
         self.tableOption.show()
         self.moveIndicator.show()
         self.restartButton.show()
@@ -1276,17 +1226,6 @@ class BoardVis(QMainWindow):
             # whiteAI v blackHuman
             self.ai_player = AIPlayer(self.controller, 1)
             self.make_AI_move()
-
-    def okayButtonClicked(self):
-        self.hidepauseBackground()
-        self.update_captured_pieces()
-        self.make_AI_move() #TODO: find place for this after update pieces is fixed
-
-        #set celebrate action
-        if self.controller.is_game_over():
-            global game_over
-            game_over = True
-            self.congratulations()
 
     def __set_button(self, button: QPushButton, scale):
         font = QFont()
@@ -1383,142 +1322,47 @@ class BoardVis(QMainWindow):
         self.gameTypeText.hide()
         self.startGameButton.hide()
 
+    def hideEnding(self):
+        self.return_to_start.hide()
+        self.ending_bg.hide()
+
+        self.winnerText.hide()
+        self.firework0.movie().stop()
+        self.firework0.hide()
+        self.firework1.movie().stop()
+        self.firework1.hide()
+        self.firework2.movie().stop()
+        self.firework2.hide()
+
+        self.loserText.hide()
+        self.cryface.movie().stop()
+        self.cryface.hide()
+
     def returnToStartScreen(self):
         self.ai_move_delay.stop()
-        global game_over
-        game_over = True
-        global ai_turn
-        ai_turn = False
+        global game_is_over, ai_is_playing, dice_is_rolling
+        game_is_over, ai_is_playing, dice_is_rolling = True, False, False
+
+        self.hideEnding()
+
         self.restartButton.hide()
         self.endTurnButton.hide()
         self.moveIndicator.hide()
         self.tableOption.hide()
         self.corpButton.hide()
+
         self.helperButton.hide()
-        self.hidepauseBackground()
+
         self.showStartScreen()
         self.remove_all_h()
         self.reset_movement_data()
 
-    def rollDiceScreen(self, attackSuccess:bool):
-        self.attackSuccess = attackSuccess
-        self.diceRollScreen.show()
-        self.diceRollScreen.raise_()
-        self.__rolldiceWork()
-        self.rollDiceAnimation.show()
-        self.rollDiceAnimation.raise_()
-        self.rollText.show()
-        self.rollText.raise_()
-        self.resultCaptureText.show()
-        self.resultCaptureText.raise_()
+    def roll_dice(self):
+        global dice_is_rolling
+        dice_is_rolling = True
 
-    def __rolldiceWork(self):
-        moveIntoSidePanel = ((925-self.boardSize)/2)
-        # Set up roll dice text properties
-        self.rollText.setAlignment(Qt.AlignCenter)
-        self.rollText.setText("Rolling Dice...")
-        self.rollText.resize(900, 100)
-        font = QFont()
-        font.setFamily('Arial')
-        font.setPixelSize(self.rollText.height() * 0.4)
-        self.rollText.setFont(font)
-        self.rollText.move(int((self.boardSize / 2) - (self.rollText.width() / 2)) + moveIntoSidePanel,
-                           int((self.boardSize / 2) - 300))
-        self.rollText.hide()
-
-        if self.ai_attack_info:
-            self.aiPieceInfoText.setAlignment(Qt.AlignCenter)
-            self.aiPieceInfoText.resize(900, 100)
-            font = QFont()
-            font.setFamily('Arial')
-            font.setPixelSize(self.aiPieceInfoText.height() * 0.3)
-            self.aiPieceInfoText.setFont(font)
-            self.aiPieceInfoText.move(int((self.boardSize / 2) - (self.rollText.width() / 2)) + moveIntoSidePanel,
-                            int((self.boardSize / 2))+200)
-            text = \
-                f"{self.ai_attack_info['fromclr']} {self.ai_attack_info['fromtype']} " \
-                f"({self.ai_attack_info['fromx']}{self.ai_attack_info['fromy']}) " \
-                "attacking " \
-                f"{self.ai_attack_info['toclr']} {self.ai_attack_info['totype']} " \
-                f"({self.ai_attack_info['tox']}{self.ai_attack_info['toy']}) " \
-
-            self.aiPieceInfoText.setText(text)
-            self.aiPieceInfoText.show()
-            self.aiPieceInfoText.raise_()
-
-
-        # roll dice animation
-        self.rollDiceAnimation.setAlignment(Qt.AlignCenter)
-        self.rollDiceAnimation = QLabel(self)
-        size = QSize(128, 128)
-        pixmap = QMovie('./picture/dice.gif')
-        self.rollDiceAnimation.setMovie(pixmap)
-        pixmap.setScaledSize(size)
-        self.rollDiceAnimation.resize(300, 300)
-        pixmap.start()
-        self.timer = QTimer(self)
-        self.timer.setSingleShot(True)
-        self.timer.setInterval(2000)
-        self.timer.timeout.connect(self.__roll_dice)
-        self.timer.start()
-        self.rollDiceAnimation.move(300+moveIntoSidePanel, 200)
-        self.rollDiceAnimation.hide()
-
-    def __roll_dice(self):
-        moveIntoSidePanel = ((925-self.boardSize)/2)
-        # Set up capture result text properties
-        self.rollText.hide()
-        self.resultCaptureText.setAlignment(Qt.AlignCenter)
-        self.resultCaptureText.resize(900, 100)
-        font = QFont()
-        font.setFamily('Arial')
-        font.setPixelSize(self.resultCaptureText.height() * 0.4)
-        self.resultCaptureText.setFont(font)
-        self.resultCaptureText.move(int((self.boardSize / 2) - (self.rollText.width() / 2)) + moveIntoSidePanel,
-                           int((self.boardSize / 2) - 300))
-
-        pixmap1 = QPixmap('./picture/die' + str(self.diceRollResult))
-        pixmap1 = pixmap1.scaled(128, 128)
-        self.rollDiceAnimation.setPixmap(pixmap1)
-        self.rollDiceAnimation.move(300 + moveIntoSidePanel, 200)
-        # update when after roll
-        self.resultCaptureText.clear()
-        if self.controller.is_game_over():
-            self.resultCaptureText.setText("Capture Successful! \n Game Over!!")
-            global game_over
-            game_over = True
-            self.endTurnButton.hide()
-            self.moveIndicator.hide()
-            self.tableOption.setText("Winner: " +
-                                    ("White" if self.current_player_white else "Black") +
-                                    " Team!")
-        else:
-            self.resultCaptureText.setText("Capture " + ("Successful!" if self.attackSuccess else "Failed!"))
-
-        if ai_turn:
-            okayTimer = QTimer(self)
-            okayTimer.setSingleShot(True)
-            okayTimer.setInterval(2500)
-            okayTimer.timeout.connect(self.okayButtonClicked)
-            okayTimer.start()
-            self.ai_attack_info = None
-        else:
-            self.okayButton.show()
-            self.okayButton.raise_()
-
-
-        #clear attack var
-        self.attackSuccess = None
-
-    def hidepauseBackground(self):
-        self.diceRollScreen.hide()
-        self.rollText.hide()
-        self.rollDiceAnimation.hide()
-        self.resultCaptureText.hide()
-        self.resultCaptureText.clear()
-        self.aiPieceInfoText.clear()
-        self.aiPieceInfoText.hide()
-        self.okayButton.hide()
+        self.roll_dice_window.show()
+        self.roll_dice_window.start_rolling()
 
     def set_non_playables(self):
         light, dark, border = self.theme['board']
@@ -1879,6 +1723,185 @@ class ThemeMenu(QWidget):
         theme.set_click_func(self.set_theme)
         return theme
 
+class DiceRoll(QWidget):
+    def __init__(self, mainwindow):
+        super(DiceRoll, self).__init__()
+        self.setWindowTitle("Rolling Dice")
+        self.setFixedSize(400, 400)
+        self.hide()
+
+        self.mainwin= mainwindow
+
+        self.bg = QLabel(self)
+
+        screen = QDesktopWidget().screenGeometry()
+        x = screen.width() - mainwindow.width()
+        y = screen.height() - mainwindow.height()
+
+        self.move(x+self.mainwin.boardSize/2,y+(mainwindow.height()/2)-self.height())
+
+        self.rollingText = QLabel(self)
+        self.rollingText.setAlignment(Qt.AlignCenter)
+        self.rollingText.setText("Rolling Dice...")
+        self.rollingText.resize(self.width(), 100)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.rollingText.height() * 0.25)
+        self.rollingText.setFont(font)
+        self.rollingText.move(20, 0)
+        self.rollingText.hide()
+
+        self.rollDiceAnimation = QLabel(self)
+        self.rollDiceAnimation.setAlignment(Qt.AlignCenter)
+        self.rollDiceAnimation.resize(self.width(), self.height())
+        size = QSize(128, 128)
+        self.pixmap = QMovie('./picture/dice.gif')
+        self.pixmap.setScaledSize(size)
+        self.rollDiceAnimation.setMovie(self.pixmap)
+        self.rollDiceAnimation.move(0, 0)
+        self.rollDiceAnimation.hide()
+
+        self.rollResultText = QLabel(self)
+        self.rollResultText.setAlignment(Qt.AlignCenter)
+        self.rollResultText.resize(self.width(), 100)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.rollResultText.height() * 0.25)
+        self.rollResultText.setFont(font)
+        self.rollResultText.move(0, 0)
+        self.rollResultText.hide()
+
+        self.aiPieceInfoText = QLabel(self)
+        self.aiPieceInfoText.setAlignment(Qt.AlignCenter)
+        self.aiPieceInfoText.resize(self.width(), 100)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.aiPieceInfoText.height() * 0.25)
+        self.aiPieceInfoText.setFont(font)
+        self.aiPieceInfoText.move(0, 300)
+        self.aiPieceInfoText.hide()
+
+        self.attacked_tile = None
+
+    def start_rolling(self):
+        atk_x, atk_y = self.mainwin.attacked_loc
+        self.attackedTile = self.mainwin.tilePos[atk_y][atk_x]
+        self.attackedTile.set_active(True, True)
+
+        if self.mainwin.theme:
+            splash = self.mainwin.theme['splash']
+            color = self.mainwin.theme['color']
+        else:
+            splash = './picture/defaultChessSplash.png'
+            color = 'white'
+        self.bg.setStyleSheet(f"background-image: url({splash});")
+        self.bg.show()
+        self.bg.move(-(self.mainwin.width()-self.width())/2, -(self.mainwin.height()-self.height())/2)
+        self.bg.resize(self.mainwin.width(), self.mainwin.height())
+        self.bg.raise_()
+
+        self.rollDiceAnimation.show()
+        self.rollDiceAnimation.raise_()
+
+        self.rollResultText.setStyleSheet(f'font-weight: bold; color: {color};background-color: rgba(0, 0, 0, 0.8)')
+        self.rollResultText.show()
+        self.rollResultText.raise_()
+
+        self.rollingText.setStyleSheet(f'font-weight: bold; color: {color};')
+        self.rollingText.show()
+        self.rollingText.raise_()
+
+        if self.mainwin.ai_attack_info:
+            text = \
+                f"{self.mainwin.ai_attack_info['fromclr']} {self.mainwin.ai_attack_info['fromtype']} " \
+                f"({self.mainwin.ai_attack_info['fromx']}{self.mainwin.ai_attack_info['fromy']}) " \
+                "\nattacking\n" \
+                f"{self.mainwin.ai_attack_info['toclr']} {self.mainwin.ai_attack_info['totype']} " \
+                f"({self.mainwin.ai_attack_info['tox']}{self.mainwin.ai_attack_info['toy']}) " \
+
+            self.aiPieceInfoText.setText(text)
+            self.aiPieceInfoText.setStyleSheet(f'font-weight: bold; color: {color};background-color: rgba(0, 0, 0, 0.8)')
+            self.aiPieceInfoText.show()
+            self.aiPieceInfoText.raise_()
+
+        self.rollDiceAnimation.setMovie(self.pixmap)
+        self.pixmap.start()
+        self.timer = QTimer(self)
+        self.timer.setSingleShot(True)
+        self.timer.setInterval(2000)
+        self.timer.timeout.connect(self.__show_result)
+        self.timer.start()
+
+    def __show_result(self):
+        # Set up capture result text properties
+        self.rollDiceAnimation.hide()
+        self.pixmap.stop()
+        self.rollingText.hide()
+        self.rollResultText.move(0,0)
+
+        print('getting', self.mainwin.diceRollResult)
+        pixmap1 = QPixmap('./picture/die' + str(self.mainwin.diceRollResult))
+        pixmap1 = pixmap1.scaled(128, 128)
+        self.rollDiceAnimation.setPixmap(pixmap1)
+        self.rollDiceAnimation.show()
+        # update when after roll
+        self.rollResultText.clear()
+
+        self.rollResultText.setText("Capture " + ("Successful!" if self.mainwin.attackSuccess else "Failed!"))
+
+        dismissTimer = QTimer(self)
+        dismissTimer.setSingleShot(True)
+        dismissTimer.setInterval(2500)
+        dismissTimer.timeout.connect(self.close_and_reset)
+        dismissTimer.start()
+        self.mainwin.ai_attack_info = None
+
+        #clear attack var
+        self.mainwin.attackSuccess = None
+
+    def close_and_reset(self):
+        global dice_is_rolling
+        dice_is_rolling = False
+        self.mainwin._update_pieces()
+        self.mainwin.update_captured_pieces()
+        self.attackedTile.set_active(False, True)
+        src_x, src_y = self.mainwin.src_loc
+        self.mainwin.tilePos[src_y][src_x].toggle_as_source(False)
+
+        self.rollingText.hide()
+        self.rollDiceAnimation.hide()
+        self.rollDiceAnimation.clear()
+        self.rollResultText.hide()
+        self.rollResultText.clear()
+        self.rollResultText.setText('')
+        self.aiPieceInfoText.clear()
+        self.aiPieceInfoText.hide()
+        self.mainwin.make_AI_move() #TODO: find place for this after update pieces is fixed
+
+        self.mainwin.attackSuccess = None
+        #set celebrate action
+        if self.mainwin.controller.is_game_over():
+            global game_is_over
+            game_is_over = True
+            if ((
+                    self.mainwin.blackHumanButton.isChecked()
+                    and self.mainwin.whiteAIButton.isChecked()
+                    and self.mainwin.current_player_white
+                )
+                or
+                (
+                    self.mainwin.whiteHumanButton.isChecked()
+                    and self.mainwin.blackAIButton.isChecked()
+                    and not self.current_player_white
+                )):
+                self.mainwin.loseScreen()
+            else:
+                self.mainwin.congratulations()
+        self.close()
+
+    def closeEvent(self,event):
+        self.close_and_reset()
+        event.accept()
 class displayRules(QWebEngineView):
     class WebEnginePage(QWebEnginePage):
         def javaScriptConsoleMessage(self, level, msg, line, sourceID):

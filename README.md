@@ -30,6 +30,6 @@ This project implements 2 variants of Chess:
 - [**Ben**](https://github.com/bbeebe1) (Backend)
 - [**Brian**](https://github.com/Bkim0316) (AI, assisted with Backend)
 - [**Eric**](https://github.com/Ericphan7) (Frontend)
-- [**Kevinpaul**](https://github.com/kevinpaulguna) (GUI P5)
+- [**Kevinpaul**](https://github.com/kevinpaulguna) (Frontend P5)
 - [**Seth**](https://github.com/ExhaustedDev) (Frontend, Backend)
 - [**Teddy**](https://github.com/ted4bartz) (AI)
