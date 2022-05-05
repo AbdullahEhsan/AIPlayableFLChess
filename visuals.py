@@ -2550,4 +2550,10 @@ class displayRules(QWebEngineView):
         self.setPage(self.WebEnginePage(self))
         self.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, True)
-        self.load(QUrl.fromLocalFile(QDir.current().filePath('FL-Chess__DistAI_V5d.pdf')))
+        self.setWindowTitle("Chess Rules")
+        #self.load(QUrl.fromLocalFile(QDir.current().filePath('viewer.html')))
+        # url = QUrl("http://localhost:63342/AIPlayableFLChess/viewer.html?_ijt=ni08m56q8ooig04o54nbs7pt1d&_ij_reload=RELOAD_ON_SAVE")
+        #self.load(QUrl.fromLocalFile(QDir.current().filePath("viewer.html")))
+
+        self.load(QUrl(f"http://localhost:63342/AIPlayableFLChess/viewer.html"))
+
