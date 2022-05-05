@@ -1269,6 +1269,9 @@ class BoardVis(QMainWindow):
         if self.whiteAIButton.isChecked() and self.blackAIButton.isChecked():
             return
         self.controller.tracker.end_turn()
+        for i in range(1,4):
+            self.corp_menu.update_leader(i)
+            self.corp_menu.update_group(i)
         self.ai_move_delay.stop()
         self._update_pieces()
         self.remove_all_h()
