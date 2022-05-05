@@ -318,6 +318,11 @@ class Game:
 
         piece = self.__board[from_y][from_x].piece
 
+        if (self.__last_move_knight
+            and self.__last_move_knight[0] != piece
+            and self.tracker.get_number_of_available_moves()<=1):
+            return False
+
         if self.__last_move_knight and self.__last_move_knight[1] != self.tracker.get_turn_count():
             self.__last_move_knight = None
 
