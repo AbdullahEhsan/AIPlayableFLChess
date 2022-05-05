@@ -455,11 +455,13 @@ class BoardVis(QMainWindow):
             piece = self.moving_piece
         piece.set_h_mode(False)
         self.remove_all_h()
+
         self.current_player_white = self.controller.tracker.current_player
         isAttack = (self.move_end[0], self.move_end[1], True) in piece.moves
         moveSuccessful = self.controller.move_piece(from_x=self.move_start[0], from_y=self.move_start[1],
                                                     to_x=self.move_end[0], to_y=self.move_end[1])
         self.diceRollResult = self.controller.get_result_of_dice_roll()
+
         new_spots = []
         if moveSuccessful:
             for x, y in self.controller.get_move_path():
@@ -471,8 +473,21 @@ class BoardVis(QMainWindow):
             piece.start[1] = self.move_end[1]
         else:
             new_spot = board_to_screen(self.move_start[0], self.move_start[1], self.tileSize)
+
         print("moved piece: ", piece)
         # piece.move(new_spot[0], new_spot[1])
+
+        def updates():
+            if game_over:
+                return
+            self.update_labels()
+            if isAttack:
+                self.rollDiceScreen(moveSuccessful)
+            else:
+                self._update_pieces()
+                self.update_captured_pieces()
+                self.make_AI_move()
+
         if len(new_spots)>1 and not dragged:
             new_spots.reverse()
 
@@ -481,6 +496,7 @@ class BoardVis(QMainWindow):
             def spot_by_spot():
                 if len(new_spots)==0:
                     sbs_delay.stop()
+                    updates()
                     return
                 x, y = new_spots.pop()
                 print(x,y)
@@ -489,15 +505,7 @@ class BoardVis(QMainWindow):
             sbs_delay.timeout.connect(spot_by_spot)
             sbs_delay.start(self.sbs_delay_ms)
         else:
-            piece.move(new_spot[0], new_spot[1])
-
-        if isAttack:
-            self._update_pieces()
-            self.rollDiceScreen(moveSuccessful)
-        else:
-            self.make_AI_move() #TODO: find place for this after update pieces is fixed
-
-        self.update_labels()
+            updates()
 
         self.reset_movement_data()
 
@@ -1092,9 +1100,7 @@ class BoardVis(QMainWindow):
         def updates():
             if game_over:
                 return
-            self._update_pieces()
             self.update_labels()
-            self.update_captured_pieces()
             if isAttack:
                 no_pc = type(target_piece).__name__ != 'PieceVis'
                 self.ai_attack_info = {
@@ -1109,6 +1115,8 @@ class BoardVis(QMainWindow):
                 }
                 self.rollDiceScreen(moveSuccessful)
             else:
+                self._update_pieces()
+                self.update_captured_pieces()
                 self.make_AI_move()
 
 
