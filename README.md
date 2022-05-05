@@ -15,10 +15,23 @@ This project implements 2 variants of Chess:
    - If captured, a Bishop's commanded pieces revert to the authority of the King, and the move(s) for that corp are no longer available i.e. there is one less move per turn.
    - The Bishops will not fight on without their King; the game ends with the capture of a King.
 
+## Running Locally
+If using the executable, no installation is required.
+If running from the project files, please see below.
+
 ## Compatible Python Versions
 - Untested on versions <3.8.9
 - Known to work on versions 3.8.9 - 3.9.11
 - Broken on >=3.10.x
+
+## Dependencies
+- PyQt5
+- PyQtWebEngine
+
+To install all dependencies, run the following in your terminal from the project root directory
+```
+pip install -r req.txt
+```
 
 ## Status:
 - **Frontend**: Refinement 🟢
