@@ -1033,6 +1033,7 @@ class BoardVis(QMainWindow):
     def make_AI_move(self):
         global ai_turn
         ai_turn = True
+        self.endTurnButton.hide()
         if game_over:
             return
         if self.whiteAIButton.isChecked() and self.blackAIButton.isChecked():
@@ -1044,6 +1045,7 @@ class BoardVis(QMainWindow):
         else:
             if not self.ai_player or self.ai_turn_over():
                 ai_turn = False
+                self.endTurnButton.show()
                 return      # ai not selected, bail out of function
         self.ai_move_delay.start(self.ai_move_delay_ms)
 
