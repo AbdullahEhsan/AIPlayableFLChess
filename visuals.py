@@ -6,12 +6,264 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QPushButton, QFrame, Q
     QComboBox, QRadioButton, QButtonGroup
 from PyQt5.QtGui import QPixmap, QMouseEvent, QFont, QMovie, QIcon
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings, QWebEnginePage
+from qpageview import view
+
 from ChessAI import AIFunctions
 
 from ChessGame import Game as chess_game
 
 game_over = False
 ai_turn = False
+screentheme = "default"
+
+def make_larger(self):
+    global squareSize, wSizew, wSizeh, sbSizew, bSizew, bSizeh, lSizew, lSizeh, blSizeh, helpScreenWidth, helpScreenHeight, themeButtonWidth
+    global themeButtonHeight, sizeSelectWidth, sizeSelectHeight, welcomeTextOffsetY, welcomeTextW, welcomeTextH, okayButtonOffsetY
+    global whiteTeamTextOffsetX, whiteTeamTextOffsetY, blackTeamTextOffsetY, highlightTextOffsetY, gameTypeTextOffsetY, radioButtonTextCSS
+    global whiteButtonH, whiteButtonOffsetX, whiteButtonOffsetY, whiteButtonAIOffsetY, blackButtonOffsetY, blackButtonAIOffsetY, highlightButtonOffsetY
+    global highlightOffButtonOffsetY, gameTypeButtonOffsetY, gameTypeCorpButtonOffsetY, optionScreenOffsetX, optionScreenOffsetY, tableOptionOffsetX
+    global tableOptionOffsetY1, tableOptionOffsetY2, reStartbuttonfsize, corpButtonOffsetX, corpButtonOffsetY, capWhiteOffsetX, capWhiteOffsetY
+    global whiteBoxOffsetX, whiteBoxOffsetY, whiteBoxH, whiteBoxW, capBlackOffsetX, capBlackOffsetY, blackBoxOffsetY, endButtonOffsetX
+    global endButtonOffsetY1, endButtonOffsetY2, restartButtonOffsetY, startButtonOffsetY
+
+    global screenSize,screentheme
+
+    screenSize = "large"
+    # large
+    squareSize = 95
+    # window size
+    wSizew = 1150
+    wSizeh = 855
+    # Button Size
+    sbSizew = 180
+    bSizew = 210
+    bSizeh = 50
+    # Lable Size
+    lSizew = 230
+    lSizeh = 30
+    blSizeh = 120
+    # helper screen
+    helpScreenWidth = 750
+    helpScreenHeight = 800
+    # theme selector
+    themeButtonWidth = 65
+    themeButtonHeight = 65
+    sizeSelectWidth = 65
+    sizeSelectHeight = 65
+    # wSizew = 725
+    # wSizeh = 520
+
+    # Start screen
+    welcomeTextOffsetY = 375
+    welcomeTextW = 1125
+    welcomeTextH = 160
+    okayButtonOffsetY = 350
+
+    whiteTeamTextOffsetX = 260
+    whiteTeamTextOffsetY = 215
+    blackTeamTextOffsetY = 120
+    highlightTextOffsetY = 0
+    gameTypeTextOffsetY = 120
+
+    radioButtonTextCSS = 'color: white; font-size: 16px'
+    whiteButtonH = 0.5
+    whiteButtonOffsetX = -20
+    whiteButtonOffsetY = 160
+    whiteButtonAIOffsetY = 125
+    blackButtonOffsetY = 60
+    blackButtonAIOffsetY = 25
+    highlightButtonOffsetY = 55
+    highlightOffButtonOffsetY = 90
+    gameTypeButtonOffsetY = 180
+    gameTypeCorpButtonOffsetY = 215
+    # optionScreen offset
+    # optionScreenOffsetX = 240
+    # optionScreenOffsetY = 200
+    optionScreenOffsetX = 250
+    optionScreenOffsetY = 220
+    # tableOption offset
+    tableOptionOffsetX = 15
+    tableOptionOffsetY1 = 95
+    tableOptionOffsetY2 = 30
+    reStartbuttonfsize = 0.9
+    corpButtonOffsetX = 60
+    corpButtonOffsetY = 35
+    capWhiteOffsetX = 70
+    capWhiteOffsetY = 510
+    whiteBoxOffsetX = 12
+    whiteBoxOffsetY = 545
+    whiteBoxW = 230
+    whiteBoxH = 180
+    capBlackOffsetX = 70
+    capBlackOffsetY = 135
+    blackBoxOffsetY = 165
+    endButtonOffsetX = 60
+    endButtonOffsetY1 = 330
+    endButtonOffsetY2 = 30
+    restartButtonOffsetY = 395
+    startButtonOffsetY = 320
+
+def make_smaller(self):
+    global squareSize, wSizew, wSizeh, sbSizew, bSizew, bSizeh, lSizew, lSizeh, blSizeh, helpScreenWidth, helpScreenHeight, themeButtonWidth
+    global themeButtonHeight, sizeSelectWidth, sizeSelectHeight, welcomeTextOffsetY, welcomeTextW, welcomeTextH, okayButtonOffsetY
+    global whiteTeamTextOffsetX, whiteTeamTextOffsetY, blackTeamTextOffsetY, highlightTextOffsetY, gameTypeTextOffsetY, radioButtonTextCSS
+    global whiteButtonH, whiteButtonOffsetX, whiteButtonOffsetY, whiteButtonAIOffsetY, blackButtonOffsetY, blackButtonAIOffsetY, highlightButtonOffsetY
+    global highlightOffButtonOffsetY, gameTypeButtonOffsetY, gameTypeCorpButtonOffsetY, optionScreenOffsetX, optionScreenOffsetY, tableOptionOffsetX
+    global tableOptionOffsetY1, tableOptionOffsetY2, reStartbuttonfsize, corpButtonOffsetX, corpButtonOffsetY, capWhiteOffsetX, capWhiteOffsetY
+    global whiteBoxOffsetX, whiteBoxOffsetY, whiteBoxH, whiteBoxW, capBlackOffsetX, capBlackOffsetY, blackBoxOffsetY, endButtonOffsetX
+    global endButtonOffsetY1, endButtonOffsetY2, restartButtonOffsetY, startButtonOffsetY
+    global screenSize,screentheme
+
+    screenSize = "small"
+    # Small window
+    squareSize = 55
+    # window size
+    wSizew = 700
+    wSizeh = 495
+    # Button Size
+    sbSizew = 120
+    bSizew = 150
+    bSizeh = 30
+    # Lable Size
+    lSizew = 170
+    lSizeh = 20
+    blSizeh = 80
+    # helper screen
+    helpScreenWidth = 450
+    helpScreenHeight = 400
+    # wSizew = 725
+    # wSizeh = 520
+    # theme button selector
+    themeButtonWidth = 35
+    themeButtonHeight = 35
+    sizeSelectWidth = 35
+    sizeSelectHeight = 35
+    # Start screen
+    welcomeTextOffsetY = 225
+    welcomeTextW = 675
+    welcomeTextH = 80
+    okayButtonOffsetY = 150
+    whiteTeamTextOffsetX = 175
+    whiteTeamTextOffsetY = 135
+    blackTeamTextOffsetY = 70
+    highlightTextOffsetY = 10
+    gameTypeTextOffsetY = 50
+    radioButtonTextCSS = 'color: white; font-size: 14px'
+    whiteButtonH = 0.3
+    whiteButtonOffsetX = 50
+    whiteButtonOffsetY = 100
+    whiteButtonAIOffsetY = 75
+    blackButtonOffsetY = 40
+    blackButtonAIOffsetY = 15
+    highlightButtonOffsetY = 25
+    highlightOffButtonOffsetY = 50
+    gameTypeButtonOffsetY = 80
+    gameTypeCorpButtonOffsetY = 105
+    # optionScreen offset
+    optionScreenOffsetX = 120
+    optionScreenOffsetY = 100
+    # tableOption offset
+    tableOptionOffsetX = 5
+    tableOptionOffsetY1 = 55
+    tableOptionOffsetY2 = 10
+    reStartbuttonfsize = 0.5
+    corpButtonOffsetX = 40
+    corpButtonOffsetY = 15
+    capWhiteOffsetX = 50
+    capWhiteOffsetY = 270
+    whiteBoxOffsetX = 8
+    whiteBoxOffsetY = 295
+    whiteBoxW = 170
+    whiteBoxH = 100
+    capBlackOffsetX = 50
+    capBlackOffsetY = 55
+    blackBoxOffsetY = 85
+    endButtonOffsetX = 40
+    endButtonOffsetY1 = 170
+    endButtonOffsetY2 = 10
+    restartButtonOffsetY = 205
+    startButtonOffsetY = 180
+
+def make_default(self):
+    global squareSize, wSizew, wSizeh, sbSizew, bSizew, bSizeh, lSizew, lSizeh, blSizeh, helpScreenWidth, helpScreenHeight, themeButtonWidth
+    global themeButtonHeight, sizeSelectWidth, sizeSelectHeight, welcomeTextOffsetY, welcomeTextW, welcomeTextH, okayButtonOffsetY
+    global whiteTeamTextOffsetX, whiteTeamTextOffsetY, blackTeamTextOffsetY, highlightTextOffsetY, gameTypeTextOffsetY, radioButtonTextCSS
+    global whiteButtonH, whiteButtonOffsetX, whiteButtonOffsetY, whiteButtonAIOffsetY, blackButtonOffsetY, blackButtonAIOffsetY, highlightButtonOffsetY
+    global highlightOffButtonOffsetY, gameTypeButtonOffsetY, gameTypeCorpButtonOffsetY, optionScreenOffsetX, optionScreenOffsetY, tableOptionOffsetX
+    global tableOptionOffsetY1, tableOptionOffsetY2, reStartbuttonfsize, corpButtonOffsetX, corpButtonOffsetY, capWhiteOffsetX, capWhiteOffsetY
+    global whiteBoxOffsetX, whiteBoxOffsetY, whiteBoxH, whiteBoxW, capBlackOffsetX, capBlackOffsetY, blackBoxOffsetY, endButtonOffsetX
+    global endButtonOffsetY1, endButtonOffsetY2, restartButtonOffsetY, startButtonOffsetY
+    global screenSize,screentheme
+
+    screenSize = "default"
+    # Medium
+    squareSize = 75
+    # window size
+    wSizew = 925
+    wSizeh = 675
+    # Button Size
+    sbSizew = 150
+    bSizew = 180
+    bSizeh = 40
+    # Lable Size
+    lSizew = 200
+    lSizeh = 25
+    blSizeh = 100
+    # helper screen
+    helpScreenWidth = 600
+    helpScreenHeight = 600
+    # theme selector
+    themeButtonWidth = 50
+    themeButtonHeight = 50
+    sizeSelectWidth = 50
+    sizeSelectHeight = 50
+    # wSizew = 725
+    # wSizeh = 520
+    # Start screen
+    welcomeTextOffsetY = 300
+    welcomeTextW = 900
+    welcomeTextH = 100
+    okayButtonOffsetY = 250
+    whiteTeamTextOffsetX = 200
+    whiteTeamTextOffsetY = 175
+    blackTeamTextOffsetY = 95
+    highlightTextOffsetY = 5
+    gameTypeTextOffsetY = 85
+    radioButtonTextCSS = 'color: white; font-size: 15px'
+    whiteButtonH = 0.4
+    whiteButtonOffsetX = 0
+    whiteButtonOffsetY = 130
+    whiteButtonAIOffsetY = 100
+    blackButtonOffsetY = 40
+    blackButtonAIOffsetY = 10
+    highlightButtonOffsetY = 50
+    highlightOffButtonOffsetY = 80
+    gameTypeButtonOffsetY = 140
+    gameTypeCorpButtonOffsetY = 170
+    # optionScreen offset
+    optionScreenOffsetX = 180
+    optionScreenOffsetY = 150
+    # tableOption offset
+    tableOptionOffsetX = 10
+    tableOptionOffsetY1 = 75
+    tableOptionOffsetY2 = 20
+    reStartbuttonfsize = 0.7
+    corpButtonOffsetX = 50
+    corpButtonOffsetY = 25
+    capWhiteOffsetX = 60
+    capWhiteOffsetY = 390
+    whiteBoxOffsetX = 10
+    whiteBoxOffsetY = 420
+    whiteBoxW = 200
+    whiteBoxH = 140
+    capBlackOffsetX = 60
+    capBlackOffsetY = 95
+    blackBoxOffsetY = 125
+    endButtonOffsetX = 50
+    endButtonOffsetY1 = 250
+    endButtonOffsetY2 = 20
+    restartButtonOffsetY = 300
+    startButtonOffsetY = 250
 
 def corp_to_color(corp_num):
     colors = ['', 'rd', 'bl', 'gr']
@@ -242,10 +494,10 @@ class TileVis(QLabel):
         self.is_active = False
         self.move_highlight = QLabel(parent=self)
         self.move_highlight.setStyleSheet("background-color: rgba(255,255,0,150)")
-        self.move_highlight.resize(75, 75)
+        self.move_highlight.resize(squareSize, squareSize)
         self.atk_highlight = QLabel(parent=self)
         self.atk_highlight.setStyleSheet("background-color: rgba(255,69,0,150)")
-        self.atk_highlight.resize(75, 75)
+        self.atk_highlight.resize(squareSize, squareSize)
         self.default_vis = QPixmap('./picture/' + visual)
         self.set_img(False)
 
@@ -285,6 +537,9 @@ class TileVis(QLabel):
 class BoardVis(QMainWindow):
     def __init__(self):
         super(BoardVis,self).__init__()
+        make_default(self)
+        # make_larger(self)
+        # make_smaller(self)
         self.controller = chess_game()
         self.__game_type = ""
         self.h_mode = True
@@ -294,13 +549,13 @@ class BoardVis(QMainWindow):
         self.moving_piece = None
         #This block sets up the window properties
         #self.setGeometry(500, 200, 300, 300)
-        self.setFixedSize(925, 675)
+        self.setFixedSize(wSizew, wSizeh)
         self.setWindowIcon(QIcon('./picture/chessIcon.png'))
         self.setWindowTitle("AIFLChess")
         self.highlighted = []
         self.corp_menu = CorpMenu(self)
 
-        self.tileSize = 75
+        self.tileSize = squareSize
         self.boardSize = self.tileSize * 9.5
 
         self.theme_menu = ThemeMenu(400,400, self)
@@ -310,14 +565,23 @@ class BoardVis(QMainWindow):
         # buttons:
         #displays theme menu
         self.options = QPushButton('', self)
-        self.options.setFixedSize(50,50)
+        self.options.setFixedSize(themeButtonWidth,themeButtonHeight)
         self.options.setStyleSheet("background-color: rgba(255, 255, 255, 0);")
         gear_image = QPixmap('./picture/settingsGear')
         gear_icon = QIcon(gear_image)
         self.options.setIcon(gear_icon)
-        self.options.setIconSize(QSize(50,50))
+        self.options.setIconSize(QSize(themeButtonWidth,themeButtonHeight))
         self.options.clicked.connect(self.theme_menu.show)
 
+        # size selection menu
+        self.sizeOptions = QPushButton('change size', self)
+        self.sizeOptions.setFixedSize(sizeSelectWidth, sizeSelectHeight)
+        self.sizeOptions.setStyleSheet("background-color: rgba(255, 255, 255, 0);")
+        change_img = QPixmap('/Users/kpgunasingh/NewSenior/AIPlayableFLChess/picture/another-change-4.png')
+        change_icon = QIcon(change_img)
+        self.sizeOptions.setIconSize(QSize(sizeSelectWidth, sizeSelectHeight))
+        self.sizeOptions.show()
+        # self.sizeOptions.clicked.connect(self.sizeOptions.show())
 
         # This button allow you can stop your turn
         self.endTurnButton = QPushButton("End Turn", self)
@@ -368,6 +632,9 @@ class BoardVis(QMainWindow):
 
         #set up the buttons
         self.startGameButton= QPushButton("Start game",self)
+        self.smallSelectButton = QPushButton("Small", self)
+        self.largeSelectButton = QPushButton("Large", self)
+        self.revertDefault = QPushButton("Default", self)
 
         self.whiteHumanButton = QRadioButton("Human", self)
         self.whiteAIButton = QRadioButton("Computer", self)
@@ -459,7 +726,9 @@ class BoardVis(QMainWindow):
         self.highlightText.setStyleSheet(text_css)
 
         self.startGameButton.setStyleSheet(button_css)
-
+        self.smallSelectButton.setStyleSheet(button_css)
+        self.largeSelectButton.setStyleSheet(button_css)
+        self.revertDefault.setStyleSheet(button_css)
         # roll dice screen
         self.rollText.setStyleSheet(alt_text_css if theme=='marble' else text_css)
         self.resultCaptureText.setStyleSheet(alt_text_css if theme=='marble' else text_css)
@@ -602,34 +871,34 @@ class BoardVis(QMainWindow):
     #Create table option properties
         self.tableOption.setText("Current Turn: White")
         self.tableOption.setAlignment(Qt.AlignCenter)
-        self.tableOption.resize(200, 25)
+        self.tableOption.resize(lSizew, lSizeh)
         font = QFont()
         font.setFamily("Impact")
         font.setPixelSize(self.tableOption.height() * 0.8)
         self.tableOption.setFont(font)
-        self.tableOption.move(int(self.boardSize) - 10,
-                              int(self.boardSize /2 -75) - (self.tableOption.height()) * 0.5 +20)
+        self.tableOption.move(int(self.boardSize) - tableOptionOffsetX,
+                              int(self.boardSize /2 -tableOptionOffsetY1) - (self.tableOption.height()) * 0.5 +tableOptionOffsetY2)
         self.tableOption.hide()
 
     #Create show information of move indicator
         self.moveIndicator.setText("Remaining Move:")
         self.moveIndicator.setAlignment(Qt.AlignCenter)
-        self.moveIndicator.resize(200, 25)
+        self.moveIndicator.resize(lSizew, lSizeh)
         font = QFont()
         font.setFamily("impact")
         font.setPixelSize(self.moveIndicator.height() * 0.8)
         self.moveIndicator.setFont(font)
-        self.moveIndicator.move(int(self.boardSize) - 10,
-                                int(self.boardSize /2)- (self.moveIndicator.height()) * 0.5 - 20)
+        self.moveIndicator.move(int(self.boardSize) - tableOptionOffsetX,
+                                int(self.boardSize /2)- (self.moveIndicator.height()) * 0.5 - tableOptionOffsetY2)
         self.moveIndicator.hide()
 
     #manage corp button setup:
-        self.__set_button(self.corpButton, 0.7)
+        self.__set_button(self.corpButton, reStartbuttonfsize)
         self.corpButton.setCheckable(True)
         self.corpButton.clicked.connect(self.corpBClicked)
-        self.corpButton.resize(180,40)
-        self.corpButton.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 50,
-                             25)
+        self.corpButton.resize(bSizew,bSizeh)
+        self.corpButton.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - corpButtonOffsetX,
+                             corpButtonOffsetY)
 
         self.wCapturedText = QLabel(self)
         self.wCapturedFrame = QFrame(self)
@@ -640,21 +909,21 @@ class BoardVis(QMainWindow):
         # Create white pieces captured
         self.wCapturedText.setText("CAPTURED BY WHITE")
         self.wCapturedText.setAlignment(Qt.AlignCenter)
-        self.wCapturedText.resize(200, 25)
+        self.wCapturedText.resize(lSizew, lSizeh)
         font = QFont()
         font.setBold(True)
         font.setFamily("Baskerville")
         font.setPixelSize(self.moveIndicator.height() * 0.6)
         self.wCapturedText.setFont(font)
-        self.wCapturedText.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 60,
-                             390)
+        self.wCapturedText.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - capWhiteOffsetX,
+                             capWhiteOffsetY)
 
         #set frame for wCapturedPic:
         self.wCapturedFrame.setFrameShape(QFrame.Box)
         self.wCapturedFrame.setLineWidth(2)
-        self.wCapturedFrame.setGeometry(int(self.boardSize) - 10,
-                                      420,
-                                      200, 140)
+        self.wCapturedFrame.setGeometry(int(self.boardSize) - whiteBoxOffsetX,
+                                      whiteBoxOffsetY,
+                                      whiteBoxW, whiteBoxH)
         self.wCapLayout = QVBoxLayout()
         self.wCapLayout.addWidget(QWidget())
         self.wCapturedFrame.setLayout(self.wCapLayout)
@@ -662,22 +931,22 @@ class BoardVis(QMainWindow):
         # Create black pieces captured
         self.bCapturedText.setText("CAPTURED BY BLACK")
         self.bCapturedText.setAlignment(Qt.AlignCenter)
-        self.bCapturedText.resize(200, 25)
+        self.bCapturedText.resize(lSizew, lSizeh)
         font = QFont()
         font.setBold(True)
         font.setFamily("Baskerville")
         font.setPixelSize(self.moveIndicator.height() * 0.6)
         self.bCapturedText.setFont(font)
         self.bCapturedText.move(
-            int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - 60,
-            95)
+            int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2)) - capBlackOffsetX,
+            capBlackOffsetY)
 
         # set frame for bCapturedPic:
         self.bCapturedFrame.setFrameShape(QFrame.Box)
         self.bCapturedFrame.setLineWidth(2)
-        self.bCapturedFrame.setGeometry(int(self.boardSize) - 10,
-                                        125,
-                                        200, 140)
+        self.bCapturedFrame.setGeometry(int(self.boardSize) - whiteBoxOffsetX,
+                                        blackBoxOffsetY,
+                                        whiteBoxW, whiteBoxH)
         self.bCapLayout = QVBoxLayout()
         self.bCapLayout.addWidget(QWidget())
         self.bCapturedFrame.setLayout(self.bCapLayout)
@@ -686,20 +955,20 @@ class BoardVis(QMainWindow):
             self.corpButton.hide()
 
     #Create stop button properties
-        self.__set_button(self.endTurnButton, 0.7)
+        self.__set_button(self.endTurnButton, reStartbuttonfsize)
         self.endTurnButton.clicked.connect(self.endTurnClicked)
-        self.endTurnButton.move(int(self.boardSize - ((self.endTurnButton.width() - self.tableOption.width()) / 2))-50,
-                              int(self.boardSize / 2 + 250) - (self.endTurnButton.height() * 0.5)-20)
+        self.endTurnButton.move(int(self.boardSize - ((self.endTurnButton.width() - self.tableOption.width()) / 2))-endButtonOffsetX,
+                              int(self.boardSize / 2 + endButtonOffsetY1) - (self.endTurnButton.height() * 0.5)-endButtonOffsetY2)
 
-        self.endTurnButton.resize(180,40)
+        self.endTurnButton.resize(bSizew,bSizeh)
         self.endTurnButton.hide()
 
     #Create restart button properties
-        self.__set_button(self.restartButton, 0.7)
-        self.restartButton.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2))-50,
-                             int(self.boardSize / 2 + 300) - (self.restartButton.height() * 0.5)-20)
+        self.__set_button(self.restartButton, reStartbuttonfsize)
+        self.restartButton.move(int(self.boardSize - ((self.restartButton.width() - self.tableOption.width()) / 2))-endButtonOffsetX,
+                             int(self.boardSize / 2 + restartButtonOffsetY) - (self.restartButton.height() * 0.5)-endButtonOffsetY2)
 
-        self.restartButton.resize(180,40)
+        self.restartButton.resize(bSizew,bSizeh)
         self.restartButton.clicked.connect(self.returnToStartScreen)
         self.restartButton.hide()
 
@@ -722,13 +991,13 @@ class BoardVis(QMainWindow):
         self.welcomeText.setAlignment(Qt.AlignCenter)
         self.welcomeText.setText("Welcome to Fuzzy Logic Chess!"
                                     "\nGame Setup:")
-        self.welcomeText.resize(900, 100)
+        self.welcomeText.resize(welcomeTextW, welcomeTextH)
         font = QFont()
         font.setFamily('Arial')
         font.setPixelSize(self.welcomeText.height() * 0.4)
         self.welcomeText.setFont(font)
         self.welcomeText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + moveIntoSidePanel,
-                                 int((self.boardSize / 2) - 300))
+                                 int((self.boardSize / 2) - welcomeTextOffsetY))
         self.welcomeText.hide()
 
         self.options.move(self.tileSize/6, self.tileSize/6)
@@ -743,56 +1012,94 @@ class BoardVis(QMainWindow):
 
         # Set up for okay button properties
         self.okayButton.clicked.connect(self.okayButtonClicked)
-        self.okayButton.resize(150, 40)
+        self.okayButton.resize(sbSizew, bSizeh)
         font = QFont()
         font.setFamily('Arial')
         font.setPixelSize(self.okayButton.height() * 0.4)
         self.okayButton.setFont(font)
         self.okayButton.move(int((self.boardSize / 2) - (self.okayButton.width() / 2)) + moveIntoSidePanel
-                             , int((self.boardSize / 2) + 250))
+                             , int((self.boardSize / 2) + okayButtonOffsetY))
         self.okayButton.hide()
 
         #set up the option screen properties
         self.optionScreen.setAlignment(Qt.AlignCenter)
         self.optionScreen.resize(self.boardSize / 1.5, self.boardSize / 2)
         self.optionScreen.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
-        self.optionScreen.move(int((self.boardSize / 2) - (self.onhighlight.width() / 2)) - 180 + moveIntoSidePanel
-                               , int((self.boardSize / 2) - 150))
+        self.optionScreen.move(int((self.boardSize / 2) - (self.onhighlight.width() / 2)) - optionScreenOffsetX + moveIntoSidePanel
+                               , int((self.boardSize / 2) - optionScreenOffsetY))
         self.optionScreen.hide()
 
         # Set up for start game button properties
         self.startGameButton.clicked.connect(self.startGameClicked)
-        self.startGameButton.resize(150, 40)
+        self.startGameButton.resize(sbSizew, bSizeh)
         font = QFont()
         font.setFamily('Arial')
         font.setPixelSize(self.startGameButton.height() * 0.4)
         self.startGameButton.setFont(font)
         self.startGameButton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel
-                            , int((self.boardSize / 2) + 250))
+                            , int((self.boardSize / 2) + startButtonOffsetY))
         self.startGameButton.hide()
+
+        # set up for small size selector
+
+        # set up for small size selector
+        self.smallSelectButton.clicked.connect(self.smallSelectButtonClicked)
+        self.smallSelectButton.resize(sbSizew, bSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.smallSelectButton.height() * 0.4)
+        self.smallSelectButton.setFont(font)
+        self.smallSelectButton.move(
+            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - 345
+            , int((self.boardSize / 2) + startButtonOffsetY - 97))
+        self.smallSelectButton.hide()
+
+        # set up for large size selector
+        self.largeSelectButton.clicked.connect(self.largeSelectButtonClicked)
+        self.largeSelectButton.resize(sbSizew, bSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.largeSelectButton.height() * 0.4)
+        self.largeSelectButton.setFont(font)
+        self.largeSelectButton.move(
+            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - 345
+            , int((self.boardSize / 2) + startButtonOffsetY + 7))
+        self.largeSelectButton.hide()
+
+        # set up for selecting revert to default
+        self.revertDefault.clicked.connect(self.revertToDefaultClicked)
+        self.revertDefault.resize(sbSizew, bSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.revertDefault.height() * 0.4)
+        self.revertDefault.setFont(font)
+        self.revertDefault.move(
+            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - 345
+            , int((self.boardSize / 2) + startButtonOffsetY - 45))
+        self.revertDefault.hide()
 
         #set up team text properties
         self.whiteTeamText.setAlignment(Qt.AlignCenter)
         self.whiteTeamText.setText("White Player:")
-        self.whiteTeamText.resize(200, 100)
+        self.whiteTeamText.resize(lSizew, blSizeh)
         font = QFont()
         font.setFamily('Arial')
         font.setPixelSize(self.whiteTeamText.height() * 0.2)
         self.whiteTeamText.setFont(font)
-        self.whiteTeamText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
-                                  int((self.boardSize / 2) - 175))
+        self.whiteTeamText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + whiteTeamTextOffsetX + moveIntoSidePanel,
+                                  int((self.boardSize / 2) - whiteTeamTextOffsetY))
         self.whiteTeamText.hide()
 
         #set up opponent text properties
         self.blackTeamText.setAlignment(Qt.AlignCenter)
         self.blackTeamText.setText("Black Player: ")
-        self.blackTeamText.resize(200, 100)
+        self.blackTeamText.resize(lSizew, blSizeh)
         font = QFont()
         font.setFamily('Arial')
         font.setPixelSize(self.whiteTeamText.height() * 0.2)
         self.blackTeamText.setFont(font)
-        self.blackTeamText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
-                               int((self.boardSize / 2) - 95))
+        self.blackTeamText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + whiteTeamTextOffsetX + moveIntoSidePanel,
+                               int((self.boardSize / 2) - blackTeamTextOffsetY))
         self.blackTeamText.hide()
 
 
@@ -800,42 +1107,42 @@ class BoardVis(QMainWindow):
         #set up highlight text properties
         self.highlightText.setAlignment(Qt.AlignCenter)
         self.highlightText.setText("Highlight: ")
-        self.highlightText.resize(200, 100)
+        self.highlightText.resize(lSizew, blSizeh)
         font = QFont()
         font.setFamily('Arial')
         font.setPixelSize(self.whiteTeamText.height() * 0.2)
         self.highlightText.setFont(font)
-        self.highlightText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
-                                int((self.boardSize / 2) - 5))
+        self.highlightText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + whiteTeamTextOffsetX + moveIntoSidePanel,
+                                int((self.boardSize / 2) - highlightTextOffsetY))
         self.highlightText.hide()
 
         #set up game type text properties
         self.gameTypeText.setAlignment(Qt.AlignCenter)
         self.gameTypeText.setText("Game Type: ")
-        self.gameTypeText.resize(200, 100)
+        self.gameTypeText.resize(lSizew, blSizeh)
         font = QFont()
         font.setFamily('Arial')
         font.setPixelSize(self.whiteTeamText.height() * 0.2)
         self.gameTypeText.setFont(font)
-        self.gameTypeText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + 200 + moveIntoSidePanel,
-                               int((self.boardSize / 2) + 85))
+        self.gameTypeText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + whiteTeamTextOffsetX + moveIntoSidePanel,
+                               int((self.boardSize / 2) + gameTypeTextOffsetY))
         self.gameTypeText.hide()
 
-        radioButtonTextCSS = 'color: white; font-size: 15px'
+        #radioButtonTextCSS = 'color: white; font-size: 15px'
 
         #set up white/black button properties
         self.whitegroup = QButtonGroup()
 
         self.whitegroup.addButton(self.whiteHumanButton)
-        self.__set_button(self.whiteHumanButton, 0.4)
-        self.whiteHumanButton.move(int((self.boardSize / 2) - (self.whiteHumanButton.width() / 2)) + moveIntoSidePanel
-                              , int((self.boardSize / 2) - 130))
+        self.__set_button(self.whiteHumanButton, whiteButtonH)
+        self.whiteHumanButton.move(int((self.boardSize / 2) - (self.whiteHumanButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+                              , int((self.boardSize / 2) - whiteButtonOffsetY))
 
          # Set up for black button properties
         self.whitegroup.addButton(self.whiteAIButton)
-        self.__set_button(self.whiteAIButton, 0.4)
-        self.whiteAIButton.move(int((self.boardSize / 2) - (self.whiteAIButton.width() / 2)) + moveIntoSidePanel
-                              , int((self.boardSize / 2) - 100))
+        self.__set_button(self.whiteAIButton, whiteButtonH)
+        self.whiteAIButton.move(int((self.boardSize / 2) - (self.whiteAIButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+                              , int((self.boardSize / 2) - whiteButtonAIOffsetY))
 
         self.whiteHumanButton.setChecked(True)
 
@@ -848,14 +1155,14 @@ class BoardVis(QMainWindow):
         self.blackgroup = QButtonGroup(self)
 
         self.blackgroup.addButton(self.blackHumanButton, 1)
-        self.__set_button(self.blackHumanButton, 0.4)
-        self.blackHumanButton.move(int((self.boardSize / 2) - (self.blackHumanButton.width() / 2)) + moveIntoSidePanel
-                              , int((self.boardSize / 2) - 40))
+        self.__set_button(self.blackHumanButton, whiteButtonH)
+        self.blackHumanButton.move(int((self.boardSize / 2) - (self.blackHumanButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+                              , int((self.boardSize / 2) - blackButtonOffsetY))
 
         self.blackgroup.addButton(self.blackAIButton, 2)
-        self.__set_button(self.blackAIButton, 0.4)
-        self.blackAIButton.move(int((self.boardSize / 2) - (self.blackAIButton.width() / 2)) + moveIntoSidePanel
-                                 , int((self.boardSize / 2) - 10))
+        self.__set_button(self.blackAIButton, whiteButtonH)
+        self.blackAIButton.move(int((self.boardSize / 2) - (self.blackAIButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+                                 , int((self.boardSize / 2) - blackButtonAIOffsetY))
 
         self.blackHumanButton.setChecked(True)
 
@@ -868,14 +1175,14 @@ class BoardVis(QMainWindow):
         self.highlight_group = QButtonGroup(self)
 
         self.highlight_group.addButton(self.onhighlight, 1)
-        self.__set_button(self.onhighlight, 0.4)
-        self.onhighlight.move(int((self.boardSize / 2) - (self.onhighlight.width() / 2)) + moveIntoSidePanel
-                              , int((self.boardSize / 2) + 50))
+        self.__set_button(self.onhighlight, whiteButtonH)
+        self.onhighlight.move(int((self.boardSize / 2) - (self.onhighlight.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+                              , int((self.boardSize / 2) + highlightButtonOffsetY))
 
         self.highlight_group.addButton(self.offhighlight, 2)
-        self.__set_button(self.offhighlight, 0.4)
-        self.offhighlight.move(int((self.boardSize / 2) - (self.offhighlight.width() / 2)) + moveIntoSidePanel
-                               , int((self.boardSize / 2) + 80))
+        self.__set_button(self.offhighlight, whiteButtonH)
+        self.offhighlight.move(int((self.boardSize / 2) - (self.offhighlight.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+                               , int((self.boardSize / 2) + highlightOffButtonOffsetY))
         self.onhighlight.setChecked(True)
 
         self.onhighlight.setStyleSheet(radioButtonTextCSS)
@@ -887,14 +1194,14 @@ class BoardVis(QMainWindow):
         self.gameType_group = QButtonGroup(self)
 
         self.gameType_group.addButton(self.medievalButton, 1)
-        self.__set_button(self.medievalButton, 0.4)
-        self.medievalButton.move(int((self.boardSize / 2) - (self.medievalButton.width() / 2)) + moveIntoSidePanel
-                                 , int((self.boardSize / 2) + 140))
+        self.__set_button(self.medievalButton, whiteButtonH)
+        self.medievalButton.move(int((self.boardSize / 2) - (self.medievalButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+                                 , int((self.boardSize / 2) + gameTypeButtonOffsetY))
 
         self.gameType_group.addButton(self.corpCommanderButton, 2)
-        self.__set_button(self.corpCommanderButton, 0.4)
-        self.corpCommanderButton.move(int((self.boardSize / 2) - (self.corpCommanderButton.width() / 2)) + moveIntoSidePanel
-                                      , int((self.boardSize / 2) + 170))
+        self.__set_button(self.corpCommanderButton, whiteButtonH)
+        self.corpCommanderButton.move(int((self.boardSize / 2) - (self.corpCommanderButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+                                      , int((self.boardSize / 2) + gameTypeCorpButtonOffsetY))
         self.corpCommanderButton.setChecked(True)
 
         self.medievalButton.setStyleSheet(radioButtonTextCSS)
@@ -912,7 +1219,355 @@ class BoardVis(QMainWindow):
         # set up the win congratulation screen properties
         self.winCon = QLabel(self)
         self.winCon.setAlignment(Qt.AlignCenter)
-        self.winCon.resize(925, 675)
+        self.winCon.resize(wSizew, wSizeh)
+        self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
+        self.winCon.move(0, 0)
+        self.winCon.hide()
+
+    # Reset Board Size
+    def resetBoardSize(self):
+        print("Reset Board Size")
+
+        self.setFixedSize(wSizew, wSizeh)
+        self.tileSize = squareSize
+        self.boardSize = self.tileSize * 9.5
+
+        self.tableOption.resize(lSizew, lSizeh)
+        font = QFont()
+        font.setFamily("Impact")
+        font.setPixelSize(self.tableOption.height() * 0.8)
+        self.tableOption.setFont(font)
+        self.tableOption.move(int(self.boardSize) - tableOptionOffsetX,
+                              int(self.boardSize / 2 - tableOptionOffsetY1) - (
+                                  self.tableOption.height()) * 0.5 + tableOptionOffsetY2)
+        self.tableOption.hide()
+
+        # Create show information of move indicator
+
+        self.moveIndicator.resize(lSizew, lSizeh)
+        font = QFont()
+        font.setFamily("impact")
+        font.setPixelSize(self.moveIndicator.height() * 0.8)
+        self.moveIndicator.setFont(font)
+        self.moveIndicator.move(int(self.boardSize) - tableOptionOffsetX,
+                                int(self.boardSize / 2) - (self.moveIndicator.height()) * 0.5 - tableOptionOffsetY2)
+        self.moveIndicator.hide()
+
+        # Create restart button properties
+        self.restartButton.resize(bSizew, bSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(bSizeh * 0.4)
+        self.restartButton.setFont(font)
+
+        #self.restartButton.move(
+        #    int(self.boardSize - ((bSizew - lSizew) / 2)) - endButtonOffsetX,
+        #    int(self.boardSize / 2 + restartButtonOffsetY) - (bSizeh * 0.5) - endButtonOffsetY2)
+        self.restartButton.move(
+                int(self.boardSize - ((bSizew - lSizew) / 2)) - 20,
+                int(self.boardSize / 2 + restartButtonOffsetY) - (bSizeh * 0.5) - endButtonOffsetY2)
+
+        self.restartButton.hide()
+        # manage corp button setup:
+        self.corpButton.resize(bSizew, bSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(bSizeh * 0.4)
+        self.corpButton.setFont(font)
+        self.corpButton.move(
+           # int(self.boardSize - ((bSizew - self.tableOption.width()) / 2)) - corpButtonOffsetX,
+            int(self.boardSize - ((bSizew - lSizew) / 2)) - 20,
+            corpButtonOffsetY)
+
+        # Create white pieces captured
+        self.wCapturedText.setAlignment(Qt.AlignCenter)
+        self.wCapturedText.resize(lSizew, lSizeh)
+        font = QFont()
+        font.setBold(True)
+        font.setFamily("Baskerville")
+        font.setPixelSize(self.moveIndicator.height() * 0.6)
+        self.wCapturedText.setFont(font)
+        self.wCapturedText.move(
+            int(self.boardSize - ((bSizew - lSizew) / 2)) - 20,
+            capWhiteOffsetY)
+
+        # set frame for wCapturedPic:
+
+        self.wCapturedFrame.setGeometry(int(self.boardSize) - whiteBoxOffsetX,
+                                        whiteBoxOffsetY,
+                                        whiteBoxW, whiteBoxH)
+
+        # Create black pieces captured
+        self.bCapturedText.setAlignment(Qt.AlignCenter)
+        self.bCapturedText.resize(lSizew, lSizeh)
+        font = QFont()
+        font.setBold(True)
+        font.setFamily("Baskerville")
+        font.setPixelSize(self.moveIndicator.height() * 0.6)
+        self.bCapturedText.setFont(font)
+        self.bCapturedText.move(
+            int(self.boardSize - ((bSizew - lSizew) / 2)) - 20,
+            capBlackOffsetY)
+
+        # set frame for bCapturedPic:
+        # self.bCapturedFrame.setFrameShape(QFrame.Box)
+        # self.bCapturedFrame.setLineWidth(2)
+        self.bCapturedFrame.setGeometry(int(self.boardSize) - whiteBoxOffsetX,
+                                        blackBoxOffsetY,
+                                        whiteBoxW, whiteBoxH)
+        # self.bCapLayout = QVBoxLayout()
+        # self.bCapLayout.addWidget(QWidget())
+        # self.bCapturedFrame.setLayout(self.bCapLayout)
+
+        # Create stop button properties
+
+
+        self.endTurnButton.resize(bSizew, bSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(bSizeh * 0.4)
+        self.endTurnButton.setFont(font)
+        self.endTurnButton.move(
+            int(self.boardSize - ((bSizew - lSizew) / 2)) - 20,
+            int(self.boardSize / 2 + endButtonOffsetY1) - (self.endTurnButton.height() * 0.5) - endButtonOffsetY2)
+
+        self.endTurnButton.hide()
+
+
+
+        # create properties for the helper button
+
+        self.helperButton.move(self.tileSize / 6, self.tileSize / 6)
+        self.helperButton.resize(self.tileSize * 2 / 3, self.tileSize * 2 / 3)
+        self.helperButton.show()
+        self.helperButton.raise_()
+
+        # Create StartScreen properties
+        self.startScreen.setAlignment(Qt.AlignCenter)
+        self.startScreen.resize(self.width(), self.height())
+        self.startScreen.setStyleSheet("background-image: url(./picture/defaultChessSplash.png);")
+        self.startScreen.move(0, 0)
+
+        moveIntoSidePanel = ((self.width() - self.boardSize) / 2)
+
+        # Set up choose side text properties
+        self.welcomeText.setAlignment(Qt.AlignCenter)
+
+        self.welcomeText.resize(welcomeTextW, welcomeTextH)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.welcomeText.height() * 0.4)
+        self.welcomeText.setFont(font)
+        self.welcomeText.move(int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + moveIntoSidePanel,
+                              int((self.boardSize / 2) - welcomeTextOffsetY))
+        self.welcomeText.hide()
+
+        self.options.move(self.tileSize / 6, self.tileSize / 6)
+
+        # Create start screen properties
+        self.pauseBackground.setAlignment(Qt.AlignCenter)
+        self.pauseBackground.resize(self.width(), self.height())
+        self.pauseBackground.setStyleSheet('background-color: black')
+        self.pauseBackground.setStyleSheet("background-image: url(./picture/defaultChessSplash.png);")
+        self.pauseBackground.move(0, 0)
+        self.pauseBackground.hide()
+
+        # Set up for okay button properties
+
+        self.okayButton.resize(sbSizew, bSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.okayButton.height() * 0.4)
+        self.okayButton.setFont(font)
+        self.okayButton.move(int((self.boardSize / 2) - (self.okayButton.width() / 2)) + moveIntoSidePanel
+                             , int((self.boardSize / 2) + okayButtonOffsetY))
+        self.okayButton.hide()
+
+        # set up the option screen properties
+        self.optionScreen.setAlignment(Qt.AlignCenter)
+        self.optionScreen.resize(self.boardSize / 1.5, self.boardSize / 2)
+        self.optionScreen.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
+        self.optionScreen.move(
+            int((self.boardSize / 2) - (self.onhighlight.width() / 2)) - optionScreenOffsetX + moveIntoSidePanel
+            , int((self.boardSize / 2) - optionScreenOffsetY))
+        self.optionScreen.hide()
+
+        # Set up for start game button properties
+
+        self.startGameButton.resize(sbSizew, bSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.startGameButton.height() * 0.4)
+        self.startGameButton.setFont(font)
+        self.startGameButton.move(int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel
+                                  , int((self.boardSize / 2) + startButtonOffsetY))
+        self.startGameButton.hide()
+
+        # set up for small size selector
+
+        # set up for small size selector
+
+        self.smallSelectButton.resize(sbSizew, bSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.smallSelectButton.height() * 0.4)
+        self.smallSelectButton.setFont(font)
+        self.smallSelectButton.move(
+            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - 280
+            , int((self.boardSize / 2) + startButtonOffsetY - 97))
+        self.smallSelectButton.hide()
+
+        # set up for large size selector
+
+        self.largeSelectButton.resize(sbSizew, bSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.largeSelectButton.height() * 0.4)
+        self.largeSelectButton.setFont(font)
+        self.largeSelectButton.move(
+            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - 280
+            , int((self.boardSize / 2) + startButtonOffsetY + 7))
+        self.largeSelectButton.hide()
+
+        # set up for selecting revert to default
+
+        self.revertDefault.resize(sbSizew, bSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.revertDefault.height() * 0.4)
+        self.revertDefault.setFont(font)
+        self.revertDefault.move(
+            int((self.boardSize / 2) - (self.startGameButton.width() / 2)) + moveIntoSidePanel - 280
+            , int((self.boardSize / 2) + startButtonOffsetY - 45))
+        self.revertDefault.hide()
+
+        # set up team text properties
+        self.whiteTeamText.setAlignment(Qt.AlignCenter)
+        self.whiteTeamText.setText("White Player:")
+        self.whiteTeamText.resize(lSizew, blSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.whiteTeamText.height() * 0.2)
+        self.whiteTeamText.setFont(font)
+        self.whiteTeamText.move(
+            int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + whiteTeamTextOffsetX + moveIntoSidePanel + 20,
+            int((self.boardSize / 2) - whiteTeamTextOffsetY))
+        self.whiteTeamText.hide()
+
+        # set up opponent text properties
+        self.blackTeamText.setAlignment(Qt.AlignCenter)
+        self.blackTeamText.setText("Black Player: ")
+        self.blackTeamText.resize(lSizew, blSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.whiteTeamText.height() * 0.2)
+        self.blackTeamText.setFont(font)
+        self.blackTeamText.move(
+            int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + whiteTeamTextOffsetX + moveIntoSidePanel + 20,
+            int((self.boardSize / 2) - blackTeamTextOffsetY))
+        self.blackTeamText.hide()
+
+        # set up highlight text properties
+        self.highlightText.setAlignment(Qt.AlignCenter)
+        self.highlightText.setText("Highlight: ")
+        self.highlightText.resize(lSizew, blSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.whiteTeamText.height() * 0.2)
+        self.highlightText.setFont(font)
+        self.highlightText.move(
+            int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + whiteTeamTextOffsetX + moveIntoSidePanel + 10,
+            int((self.boardSize / 2) - highlightTextOffsetY))
+        self.highlightText.hide()
+
+        # set up game type text properties
+        self.gameTypeText.setAlignment(Qt.AlignCenter)
+        self.gameTypeText.setText("Game Type: ")
+        self.gameTypeText.resize(lSizew, blSizeh)
+        font = QFont()
+        font.setFamily('Arial')
+        font.setPixelSize(self.whiteTeamText.height() * 0.2)
+        self.gameTypeText.setFont(font)
+        self.gameTypeText.move(
+            int((self.boardSize / 2) - (self.welcomeText.width() / 2)) + whiteTeamTextOffsetX + moveIntoSidePanel + 10,
+            int((self.boardSize / 2) + gameTypeTextOffsetY))
+        self.gameTypeText.hide()
+
+        # radioButtonTextCSS = 'color: white; font-size: 15px'
+
+        # set up white/black button properties
+        self.whiteHumanButton.setStyleSheet(radioButtonTextCSS)
+        self.whiteAIButton.setStyleSheet(radioButtonTextCSS)
+        self.whiteHumanButton.adjustSize()
+        self.whiteAIButton.adjustSize()
+        self.whiteHumanButton.move(
+            int((self.boardSize / 2) - (self.whiteHumanButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+            , int((self.boardSize / 2) - whiteButtonOffsetY))
+
+        # Set up for black button properties
+        self.whiteAIButton.move(
+            int((self.boardSize / 2) - (self.whiteHumanButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+            , int((self.boardSize / 2) - whiteButtonAIOffsetY))
+
+        # set up human/computer button properties
+        self.blackHumanButton.setStyleSheet(radioButtonTextCSS)
+        self.blackAIButton.setStyleSheet(radioButtonTextCSS)
+        self.blackHumanButton.adjustSize()
+        self.blackAIButton.adjustSize()
+        self.blackHumanButton.move(
+            int((self.boardSize / 2) - (self.whiteHumanButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+            , int((self.boardSize / 2) - blackButtonOffsetY))
+
+        #self.__set_button(self.blackAIButton, whiteButtonH)
+        self.blackAIButton.move(
+            int((self.boardSize / 2) - (self.whiteHumanButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+            , int((self.boardSize / 2) - blackButtonAIOffsetY))
+
+
+
+        # set up highlight on/off button properties
+        self.onhighlight.setStyleSheet(radioButtonTextCSS)
+        self.offhighlight.setStyleSheet(radioButtonTextCSS)
+        self.onhighlight.adjustSize()
+        self.offhighlight.adjustSize()
+
+        self.onhighlight.move(
+            int((self.boardSize / 2) - (self.whiteHumanButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+            , int((self.boardSize / 2) + highlightButtonOffsetY))
+
+        self.offhighlight.move(
+            int((self.boardSize / 2) - (self.whiteHumanButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+            , int((self.boardSize / 2) + highlightOffButtonOffsetY))
+        self.onhighlight.setChecked(True)
+
+
+        # set up medieval/corp button properties
+        self.medievalButton.setStyleSheet(radioButtonTextCSS)
+        self.corpCommanderButton.setStyleSheet(radioButtonTextCSS)
+        self.medievalButton.adjustSize()
+        self.corpCommanderButton.adjustSize()
+
+        self.medievalButton.move(
+            int((self.boardSize / 2) - (self.whiteHumanButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+            , int((self.boardSize / 2) + gameTypeButtonOffsetY))
+
+        self.corpCommanderButton.move(
+            int((self.boardSize / 2) - (self.whiteHumanButton.width() / 2)) + moveIntoSidePanel + whiteButtonOffsetX
+            , int((self.boardSize / 2) + gameTypeCorpButtonOffsetY))
+        self.corpCommanderButton.setChecked(True)
+
+        #self.set_theme()
+
+        self.captured_by = {
+            "white": [],
+            "black": []
+        }
+
+        # set up the win congratulation screen properties
+        self.show_the_rules.resize(helpScreenWidth,helpScreenHeight)
+
+        self.winCon.setAlignment(Qt.AlignCenter)
+        self.winCon.resize(wSizew, wSizeh)
         self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
         self.winCon.move(0, 0)
         self.winCon.hide()
@@ -921,7 +1576,7 @@ class BoardVis(QMainWindow):
         # set up the win congratulation screen properties
         self.winCon = QLabel(self)
         self.winCon.setAlignment(Qt.AlignCenter)
-        self.winCon.resize(925, 675)
+        self.winCon.resize(wSizew, wSizeh)
         self.winCon.setStyleSheet('background-color: rgba(0, 0, 0, .8)')
         self.winCon.move(0, 0)
         self.winCon.show()
@@ -959,7 +1614,7 @@ class BoardVis(QMainWindow):
                                     " Team!")
         self.winConText.setStyleSheet('color: red; font-weight: bold')
         self.winConText.setFont(QFont('Arial', 30))
-        self.winConText.resize(925, 675)
+        self.winConText.resize(wSizew, wSizeh)
         self.winConText.move(0, -100)
         self.winConText.show()
 
@@ -1170,6 +1825,27 @@ class BoardVis(QMainWindow):
                                 ("White" if self.controller.tracker.get_current_player() else "Black") +
                                 " Team!")
         return
+
+    def smallSelectButtonClicked(self):
+        make_smaller(self)
+        self.resetBoardSize()
+        self.set_theme(screentheme)
+        self.showStartScreen()
+        self.show()
+
+    def largeSelectButtonClicked(self):
+        make_larger(self)
+        self.resetBoardSize()
+        self.set_theme(screentheme)
+        self.showStartScreen()
+        self.show()
+
+    def revertToDefaultClicked(self):
+        make_default(self)
+        self.resetBoardSize()
+        self.set_theme(screentheme)
+        self.showStartScreen()
+        self.show()
 
     def startGameClicked(self):
         global game_over
@@ -1408,6 +2084,15 @@ class BoardVis(QMainWindow):
         self.startGameButton.show()
         self.startGameButton.raise_()
 
+        self.smallSelectButton.show()
+        self.smallSelectButton.raise_()
+
+        self.largeSelectButton.show()
+        self.largeSelectButton.raise_()
+
+        self.revertDefault.show()
+        self.revertDefault.raise_()
+
     def hideStartScreen(self):
         self.startScreen.hide()
         self.welcomeText.hide()
@@ -1429,6 +2114,9 @@ class BoardVis(QMainWindow):
         self.highlightText.hide()
         self.gameTypeText.hide()
         self.startGameButton.hide()
+        self.smallSelectButton.hide()
+        self.largeSelectButton.hide()
+        self.revertDefault.hide()
 
     def returnToStartScreen(self):
         self.ai_move_delay.stop()
@@ -1473,6 +2161,8 @@ class BoardVis(QMainWindow):
         light, dark, border = self.theme['board']
         if self.corner_tile:
             self.corner_tile.setPixmap(QPixmap('./picture/' + border))
+            self.corner_tile.resize(squareSize, squareSize)
+            self.corner_tile.setScaledContents(True)
         else:
             self.corner_tile = self.mk_basic_label(border)
             self.corner_tile.move(0, 0)
@@ -1502,6 +2192,20 @@ class BoardVis(QMainWindow):
                 self.border[0][i].setPixmap(QPixmap('./picture/' + border_bg+ltr))
                 self.border[1][i].setPixmap(QPixmap('./picture/' + border_bg+num))
 
+                label1 = self.border[0][i]
+                label2 = self.border[1][i]
+                label1.resize(squareSize, squareSize)
+                label1.setScaledContents(True)
+                label2.resize(squareSize, squareSize)
+                label2.setScaledContents(True)
+
+                label1.move(int((i + 1) * self.tileSize), 0)
+                label2.move(0, int((i + 1) * self.tileSize))
+                label1.show()
+                label2.show()
+
+
+
     def set_emptys(self, white, black, move_h, atk_h):
         is_white = True
         for j in range(8):
@@ -1510,19 +2214,24 @@ class BoardVis(QMainWindow):
                 if self.tilePos[j][i] == "0":
                     label = TileVis(name,  move_h, atk_h, parent=self)
                     label.setPixmap(QPixmap('./picture/' + name))
-                    label.resize(75, 75)
+                    label.resize(squareSize, squareSize)
                     label.setScaledContents(True)
                     label.move(int((i+1) * self.tileSize), int((j+1) * self.tileSize))
                     self.tilePos[j][i] = label
                 else:
                     self.tilePos[j][i].set_default_vis(QPixmap('./picture/' + name))
+                    label1 = self.tilePos[j][i]
+                    label1.resize(squareSize, squareSize)
+                    label1.setScaledContents(True)
+                    label1.move(int((i + 1) * self.tileSize), int((j + 1) * self.tileSize))
+
                 is_white = not is_white
             is_white = not is_white
 
     def mk_basic_label(self, name):
         label = QLabel(parent=self)
         label.setPixmap(QPixmap('./picture/' + name))
-        label.resize(75, 75)
+        label.resize(squareSize, squareSize)
         label.setScaledContents(True)
         return label
 
@@ -1545,7 +2254,7 @@ class BoardVis(QMainWindow):
                 piece_color = 'white' if piece[0]=='w' else 'black'
                 label = PieceVis(piece + corp_color_name, x, y, color=piece_color, parent=self)
                     # Set the image based on the array element.
-                label.resize(75, 75)
+                label.resize(squareSize, squareSize)
                 label.setScaledContents(True)
                 label.move(int((x+1) * self.tileSize), int((y+1) * self.tileSize))
                 label.show()
@@ -1675,7 +2384,7 @@ class LeaderBox(QWidget):
         self.setLayout(layout)
 
     def create_leader_icon(self, corp):
-        size = 75
+        size = squareSize
         color = corp_to_color(corp)
         leader_img = piece_to_img_name(self.leader)
         return corpVis(leader_img + color, self.leader, size)
@@ -1744,7 +2453,7 @@ class CorpMenu(QWidget):
         col = QVBoxLayout()
         self.col_layouts.append(col)
         col.addWidget(leader_box)
-        col.addWidget(PieceGroup(group,3,  num, 50))
+        col.addWidget(PieceGroup(group,3, num, 50))
         col.setSpacing(0)
         col.setContentsMargins(10,0,10,0)
         col_frame = QFrame()
@@ -1820,6 +2529,8 @@ class ThemeMenu(QWidget):
         return self.theme
 
     def set_theme(self, name):
+        global screentheme
+        screentheme = name
         self.main_window.set_theme(name)
 
 
@@ -1835,7 +2546,7 @@ class displayRules(QWebEngineView):
 
     def __init__(self):
         super(displayRules, self).__init__()
-        self.resize(600, 600)
+        self.resize(helpScreenWidth, helpScreenHeight)
         self.setPage(self.WebEnginePage(self))
         self.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, True)
