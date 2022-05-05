@@ -8,9 +8,9 @@ from PyQt5.QtGui import QPixmap, QMouseEvent, QFont, QMovie, QIcon
 from ChessAI import AIFunctions as AIPlayer
 from ChessGame import Game as chess_game
 
-game_over = False
-ai_turn = False
-dice_rolling = False
+game_is_over = False
+ai_is_playing = False
+dice_is_rolling = False
 
 def corp_to_color(corp_num):
     colors = ['', 'rd', 'bl', 'gr']
@@ -106,7 +106,7 @@ class PieceVis(QLabel):
     def should_freeze(self):
         tile_not_active = not self.parent().tilePos[self.start[1]][self.start[0]].get_active()
 
-        return game_over or ai_turn or dice_rolling or (tile_not_active and self.not_same_team())
+        return game_is_over or ai_is_playing or dice_is_rolling or (tile_not_active and self.not_same_team())
 
     def mousePressEvent(self, ev: QMouseEvent) -> None:
         if self.should_freeze():
@@ -120,7 +120,7 @@ class PieceVis(QLabel):
     # Set the region limits of the board that the piece can move to
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:
         # doesn't use should_freeze to allow for attacks
-        if game_over or ai_turn or dice_rolling or self.not_same_team():
+        if game_is_over or ai_is_playing or dice_is_rolling or self.not_same_team():
             return
         if ((ev.globalPos() - self.parent().pos()) - QPoint(0, 30)).x() < (0 + (self.parent().tileSize / 2)) \
                 and ((ev.globalPos() - self.parent().pos()) - QPoint(0, 30)).y() < \
@@ -232,11 +232,11 @@ class TileVis(QLabel):
         self.default_vis = new_pixmap
         self.set_img(False)
 
-    def set_active(self, val, atk=False):
+    def set_active(self, val:bool, atk=False):
         self.is_active = val
         self.set_img(atk)
 
-    def set_img(self, atk):
+    def set_img(self, atk:bool):
         if self.is_active:
             self.atk_highlight.show() if atk else self.move_highlight.show()
         else:
@@ -350,9 +350,11 @@ class BoardVis(QMainWindow):
         self.medievalButton = QRadioButton("Medieval", self)
         self.corpCommanderButton = QRadioButton("Corp Command", self)
 
-        self.roll_dice_screen = DiceRoll(self)
+        self.roll_dice_window = DiceRoll(self)
         self.attackSuccess = None
         self.diceRollResult = -1
+        self.attacked_loc = (-1,-1)
+
 
         self.sbs_delay_ms = 400
 
@@ -368,7 +370,6 @@ class BoardVis(QMainWindow):
         self.theme = None
 
         self.current_player_white = 1
-
 
         self.ending_bg = QLabel(self)
         self.winnerText = QLabel(self)
@@ -458,7 +459,8 @@ class BoardVis(QMainWindow):
 
         self.current_player_white = self.controller.tracker.current_player
         isAttack = (self.move_end[0], self.move_end[1], True) in piece.moves
-        moveSuccessful = self.controller.move_piece(from_x=self.move_start[0], from_y=self.move_start[1],
+        moveSuccessful = self.attackSuccess = self.controller.move_piece(
+                                                    from_x=self.move_start[0], from_y=self.move_start[1],
                                                     to_x=self.move_end[0], to_y=self.move_end[1])
         self.diceRollResult = self.controller.get_result_of_dice_roll()
 
@@ -475,14 +477,14 @@ class BoardVis(QMainWindow):
             new_spot = board_to_screen(self.move_start[0], self.move_start[1], self.tileSize)
 
         print("moved piece: ", piece)
-        # piece.move(new_spot[0], new_spot[1])
 
         def updates():
-            if game_over:
+            if game_is_over:
                 return
             self.update_labels()
             if isAttack:
-                self.rollDiceScreen(moveSuccessful)
+                self.attacked_loc = (self.move_end[0], self.move_end[1])
+                self.roll_dice()
             else:
                 self._update_pieces()
                 self.update_captured_pieces()
@@ -909,7 +911,7 @@ class BoardVis(QMainWindow):
         self.loserText.hide()
 
         self.set_theme()
-        self.roll_dice_screen = DiceRoll(self)
+        self.roll_dice_window = DiceRoll(self)
 
         self.captured_by = {
             "white": [],
@@ -994,20 +996,20 @@ class BoardVis(QMainWindow):
             self.bCapLayout.addWidget(black)
 
     def make_AI_move(self):
-        global ai_turn
-        ai_turn = True
+        global ai_is_playing
+        ai_is_playing = True
         self.endTurnButton.hide()
-        if game_over:
+        if game_is_over:
             return
         if self.whiteAIButton.isChecked() and self.blackAIButton.isChecked():
             if self.controller.is_game_over():
-                ai_turn = False
+                ai_is_playing = False
                 self.handle_gameover()
                 return
             self.ai_player = self.ai_v_ai_players[self.controller.tracker.current_player]
         else:
             if not self.ai_player or self.ai_turn_over():
-                ai_turn = False
+                ai_is_playing = False
                 self.endTurnButton.show()
                 return      # ai not selected, bail out of function
         self.ai_move_delay.start(self.ai_move_delay_ms)
@@ -1037,7 +1039,7 @@ class BoardVis(QMainWindow):
         if isAttack:
             target_piece = self.piecePos[to_y][to_x]
 
-        moveSuccessful = self.controller.move_piece(from_x=from_x, from_y=from_y,
+        moveSuccessful = self.attackSuccess = self.controller.move_piece(from_x=from_x, from_y=from_y,
                                                     to_x=to_x, to_y=to_y)
         self.diceRollResult = self.controller.get_result_of_dice_roll()
 
@@ -1053,10 +1055,11 @@ class BoardVis(QMainWindow):
             new_spot = board_to_screen(from_x, from_y, self.tileSize)
 
         def updates():
-            if game_over:
+            if game_is_over:
                 return
             self.update_labels()
             if isAttack:
+                self.attacked_loc = (to_x, to_y)
                 no_pc = type(target_piece).__name__ != 'PieceVis'
                 self.ai_attack_info = {
                     'fromx': str(chr(65+from_x)),
@@ -1068,7 +1071,7 @@ class BoardVis(QMainWindow):
                     'toclr': "" if no_pc else target_piece.color.title(),
                     'totype': "" if no_pc else target_piece.piece_type
                 }
-                self.rollDiceScreen(moveSuccessful)
+                self.roll_dice()
             else:
                 self._update_pieces()
                 self.update_captured_pieces()
@@ -1103,8 +1106,8 @@ class BoardVis(QMainWindow):
 
 
     def handle_gameover(self):
-        global game_over
-        game_over = True
+        global game_is_over
+        game_is_over = True
         self.endTurnButton.hide()
         self.moveIndicator.hide()
         self.tableOption.setText("Winner: " +
@@ -1113,8 +1116,8 @@ class BoardVis(QMainWindow):
         return
 
     def startGameClicked(self):
-        global game_over, ai_turn, dice_rolling
-        game_over, ai_turn, dice_rolling = False, False, False
+        global game_is_over, ai_is_playing, dice_is_rolling
+        game_is_over, ai_is_playing, dice_is_rolling = False, False, False
 
 
         self.theme_menu.close()
@@ -1280,8 +1283,8 @@ class BoardVis(QMainWindow):
 
     def returnToStartScreen(self):
         self.ai_move_delay.stop()
-        global game_over, ai_turn, dice_rolling
-        game_over, ai_turn, dice_rolling = True, False, False
+        global game_is_over, ai_is_playing, dice_is_rolling
+        game_is_over, ai_is_playing, dice_is_rolling = True, False, False
 
         self.hideEnding()
 
@@ -1294,13 +1297,12 @@ class BoardVis(QMainWindow):
         self.remove_all_h()
         self.reset_movement_data()
 
-    def rollDiceScreen(self, attackSuccess:bool):
-        global dice_rolling
-        dice_rolling = True
-        self.attackSuccess = attackSuccess
+    def roll_dice(self):
+        global dice_is_rolling
+        dice_is_rolling = True
 
-        self.roll_dice_screen.show()
-        self.roll_dice_screen.rolldiceWork()
+        self.roll_dice_window.show()
+        self.roll_dice_window.start_rolling()
 
     def set_non_playables(self):
         light, dark, border = self.theme['board']
@@ -1719,7 +1721,13 @@ class DiceRoll(QWidget):
         self.aiPieceInfoText.move(0, 300)
         self.aiPieceInfoText.hide()
 
-    def rolldiceWork(self):
+        self.attacked_tile = None
+
+    def start_rolling(self):
+        atk_x, atk_y = self.mainwin.attacked_loc
+        self.attackedTile = self.mainwin.tilePos[atk_y][atk_x]
+        self.attackedTile.set_active(True, True)
+
         if self.mainwin.theme:
             splash = self.mainwin.theme['splash']
             color = self.mainwin.theme['color']
@@ -1761,10 +1769,10 @@ class DiceRoll(QWidget):
         self.timer = QTimer(self)
         self.timer.setSingleShot(True)
         self.timer.setInterval(2000)
-        self.timer.timeout.connect(self.__roll_dice)
+        self.timer.timeout.connect(self.__show_result)
         self.timer.start()
 
-    def __roll_dice(self):
+    def __show_result(self):
         # Set up capture result text properties
         self.rollDiceAnimation.hide()
         self.pixmap.stop()
@@ -1792,10 +1800,11 @@ class DiceRoll(QWidget):
         self.mainwin.attackSuccess = None
 
     def close_and_reset(self):
-        global dice_rolling
-        dice_rolling = False
+        global dice_is_rolling
+        dice_is_rolling = False
         self.mainwin._update_pieces()
         self.mainwin.update_captured_pieces()
+        self.attackedTile.set_active(False, True)
 
         self.rollingText.hide()
         self.rollDiceAnimation.hide()
@@ -1810,8 +1819,8 @@ class DiceRoll(QWidget):
         self.mainwin.attackSuccess = None
         #set celebrate action
         if self.mainwin.controller.is_game_over():
-            global game_over
-            game_over = True
+            global game_is_over
+            game_is_over = True
             if ((
                     self.mainwin.blackHumanButton.isChecked()
                     and self.mainwin.whiteAIButton.isChecked()
