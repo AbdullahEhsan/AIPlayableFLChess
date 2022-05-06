@@ -1895,7 +1895,7 @@ class DiceRoll(QWidget):
                 (
                     self.mainwin.whiteHumanButton.isChecked()
                     and self.mainwin.blackAIButton.isChecked()
-                    and not self.current_player_white
+                    and not self.mainwin.current_player_white
                 )):
                 self.mainwin.loseScreen()
             else:
