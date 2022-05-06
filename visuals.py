@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt, QPoint, QSize, QTimer, QDir, QUrl
 from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, QGridLayout, \
     QComboBox, QRadioButton, QButtonGroup, QDesktopWidget
 from PyQt5.QtGui import QPixmap, QMouseEvent, QFont, QMovie, QIcon
-from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings, QWebEnginePage
+# from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings, QWebEnginePage
 
 from ChessAI import AIFunctions as AIPlayer
 from ChessGame import Game as chess_game
@@ -325,8 +325,8 @@ class BoardVis(QMainWindow):
         self.corpButton = QPushButton("Manage Corps", self)
 
         # This button can display the rules
-        self.helperButton = QPushButton("i", self)
-        self.show_the_rules = displayRules()
+        # self.helperButton = QPushButton("i", self)
+        # self.show_the_rules = displayRules()
 
         self.tableOption = QLabel(self)
 
@@ -463,21 +463,21 @@ class BoardVis(QMainWindow):
 
         self.startGameButton.setStyleSheet(button_css)
 
-        self.helperButton.setStyleSheet(f'''
-            QPushButton {{
-                font-family: "Times New Roman";
-                font-size: 25px;
-                background-color: {color};
-                color: black;
-                border: 0.1em solid #000000;
-                border-radius: 25px;
-            }}
-            QPushButton:hover {{
-                background-color: black;
-                color: {color};
-                border-color: {color};
-            }}
-            ''')
+        # self.helperButton.setStyleSheet(f'''
+        #     QPushButton {{
+        #         font-family: "Times New Roman";
+        #         font-size: 25px;
+        #         background-color: {color};
+        #         color: black;
+        #         border: 0.1em solid #000000;
+        #         border-radius: 25px;
+        #     }}
+        #     QPushButton:hover {{
+        #         background-color: black;
+        #         color: {color};
+        #         border-color: {color};
+        #     }}
+        #     ''')
         #End Game screen
         self.winnerText.setStyleSheet(alt_text_css)
         self.return_to_start.setStyleSheet(button_css)
@@ -562,7 +562,7 @@ class BoardVis(QMainWindow):
         self.move_end = None
 
     def closeEvent(self,event):
-        self.show_the_rules.close()
+        # self.show_the_rules.close()
         self.corp_menu.close()
         self.theme_menu.close()
         event.accept()
@@ -716,12 +716,12 @@ class BoardVis(QMainWindow):
         self.restartButton.clicked.connect(self.returnToStartScreen)
         self.restartButton.hide()
 
-        # create properties for the helper button
-        self.helperButton.clicked.connect(lambda: self.show_the_rules.show())
-        self.helperButton.move(self.tileSize/6, self.tileSize/6)
-        self.helperButton.resize(self.tileSize*2/3, self.tileSize*2/3)
-        self.helperButton.show()
-        self.helperButton.raise_()
+        # # create properties for the helper button
+        # self.helperButton.clicked.connect(lambda: self.show_the_rules.show())
+        # self.helperButton.move(self.tileSize/6, self.tileSize/6)
+        # self.helperButton.resize(self.tileSize*2/3, self.tileSize*2/3)
+        # self.helperButton.show()
+        # self.helperButton.raise_()
 
         # Create StartScreen properties
         self.startScreen.setAlignment(Qt.AlignCenter)
@@ -1201,8 +1201,8 @@ class BoardVis(QMainWindow):
         self.moveIndicator.show()
         self.restartButton.show()
         self.endTurnButton.show()
-        self.helperButton.show()
-        self.helperButton.raise_()
+        # self.helperButton.show()
+        # self.helperButton.raise_()
 
         self.controller.tracker.current_player = 1
         self.current_player_white = self.controller.tracker.current_player
@@ -1354,7 +1354,7 @@ class BoardVis(QMainWindow):
         self.tableOption.hide()
         self.corpButton.hide()
 
-        self.helperButton.hide()
+        # self.helperButton.hide()
 
         self.showStartScreen()
         self.remove_all_h()
@@ -1905,15 +1905,15 @@ class DiceRoll(QWidget):
     def closeEvent(self,event):
         self.close_and_reset()
         event.accept()
-class displayRules(QWebEngineView):
-    class WebEnginePage(QWebEnginePage):
-        def javaScriptConsoleMessage(self, level, msg, line, sourceID):
-            pass
+# class displayRules(QWebEngineView):
+#     class WebEnginePage(QWebEnginePage):
+#         def javaScriptConsoleMessage(self, level, msg, line, sourceID):
+#             pass
 
-    def __init__(self):
-        super(displayRules, self).__init__()
-        self.resize(600, 600)
-        self.setPage(self.WebEnginePage(self))
-        self.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, True)
-        self.load(QUrl.fromLocalFile(QDir.current().filePath('FL-Chess__DistAI_V5d.pdf')))
+#     def __init__(self):
+#         super(displayRules, self).__init__()
+#         self.resize(600, 600)
+#         self.setPage(self.WebEnginePage(self))
+#         self.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+#         self.settings().setAttribute(QWebEngineSettings.PdfViewerEnabled, True)
+#         self.load(QUrl.fromLocalFile(QDir.current().filePath('FL-Chess__DistAI_V5d.pdf')))
